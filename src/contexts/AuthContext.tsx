@@ -66,15 +66,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
                     const newUserID = generateUserID(assignedGroup);
 
-                    // Helper to create image sequence
+                    // Generate sequence based on debug mode
+                    // Generate full 50 image sequence regardless of debug mode
+                    // We want the pool to be 1-50 every time.
                     const allImages = Array.from({ length: 50 }, (_, i) => i + 1);
-                    const shuffledImages = allImages.sort(() => Math.random() - 0.5);
+
+                    // Fisher-Yates Shuffle for unbiased random order
+                    for (let i = allImages.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [allImages[i], allImages[j]] = [allImages[j], allImages[i]];
+                    }
+
+                    const finalSequence = allImages; // Always assign all 50
 
                     const newParticipant: Participant = {
                         userID: newUserID,
                         treatmentGroup: assignedGroup,
                         currentPhase: 'phase1',
-                        imageSequence: shuffledImages,
+                        imageSequence: finalSequence,
                         completedTrials: {}
                     };
 

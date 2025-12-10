@@ -3,6 +3,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import type { Big5Response } from '../../types';
 
 interface Big5TestProps {
@@ -15,8 +17,8 @@ const QUESTIONS = [
     "Mindig felkészült vagyok.",
     "Könnyen zavarba jövök.",
     "Gazdag szókinccsel rendelkezem.",
-    // ... Ideally 50 items. For prototype we use a subset or placeholder generator
-    ...Array.from({ length: 45 }, (_, i) => `Big 5 Teszt Kérdés #${i + 6} (Placeholder)`)
+    // Total 20 items (2 pages of 10)
+    ...Array.from({ length: 15 }, (_, i) => `Big 5 Teszt Kérdés #${i + 6} (Placeholder)`)
 ];
 
 const ITEMS_PER_PAGE = 10;
@@ -72,51 +74,58 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="max-w-3xl mx-auto mt-8 p-8 bg-white rounded shadow">
-            <h2 className="text-2xl font-bold mb-2">Személyiségteszt (Big 5)</h2>
-            <p className="text-gray-600 mb-8">Kérjük, jelölje meg, mennyire jellemző Önre az állítás (1 = Egyáltalán nem, 5 = Teljes mértékben).</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <Card title="Személyiségteszt (Big 5)" className="max-w-3xl w-full">
+                <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
+                    Kérjük, jelölje meg, mennyire jellemző Önre az állítás (1 = Egyáltalán nem, 5 = Teljes mértékben).
+                </div>
 
-            <div className="space-y-8">
-                {currentQuestions.map((q, i) => {
-                    const globalIndex = startIndex + i;
-                    const val = responses[`q_${globalIndex}`];
-                    return (
-                        <div key={globalIndex} className="border-b pb-4">
-                            <p className="font-medium mb-3">{globalIndex + 1}. {q}</p>
-                            <div className="flex justify-between items-center px-4">
-                                <span className="text-xs text-gray-500">Nem jellemző</span>
-                                <div className="flex gap-4">
-                                    {[1, 2, 3, 4, 5].map(rating => (
-                                        <label key={rating} className="flex flex-col items-center cursor-pointer">
-                                            <input
-                                                type="radio"
-                                                name={`q_${globalIndex}`}
-                                                value={rating}
-                                                checked={val === rating}
-                                                onChange={() => handleResponse(globalIndex, rating)}
-                                                className="w-5 h-5 mb-1"
-                                            />
-                                            <span className="text-sm">{rating}</span>
-                                        </label>
-                                    ))}
+                <div className="space-y-8">
+                    {currentQuestions.map((q, i) => {
+                        const globalIndex = startIndex + i;
+                        const val = responses[`q_${globalIndex}`];
+                        return (
+                            <div key={globalIndex} className="border-b border-gray-100 pb-6 last:border-0">
+                                <p className="font-bold text-lg text-gray-800 mb-4">{globalIndex + 1}. {q}</p>
+
+                                <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-50 p-4 rounded-xl gap-4">
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Egyáltalán nem</span>
+
+                                    <div className="flex gap-2 sm:gap-4">
+                                        {[1, 2, 3, 4, 5].map(rating => (
+                                            <button
+                                                key={rating}
+                                                onClick={() => handleResponse(globalIndex, rating)}
+                                                className={`w-12 h-12 rounded-lg font-bold text-lg transition-all transform hover:scale-105 duration-200 shadow-sm
+                                                    ${val === rating
+                                                        ? 'bg-blue-600 text-white ring-2 ring-blue-600 ring-offset-2'
+                                                        : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                                                    }`}
+                                            >
+                                                {rating}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Teljes mértékben</span>
                                 </div>
-                                <span className="text-xs text-gray-500">Teljesen jellemző</span>
                             </div>
-                        </div>
-                    );
-                })}
-            </div>
+                        );
+                    })}
+                </div>
 
-            <div className="mt-8 flex justify-between items-center">
-                <span className="text-gray-500">Oldal {currentPage + 1} / {totalPages}</span>
-                <button
-                    onClick={handleNext}
-                    disabled={!isPageComplete() || submitting}
-                    className="px-6 py-2 bg-blue-600 text-white rounded font-bold disabled:opacity-50"
-                >
-                    {currentPage === totalPages - 1 ? (submitting ? 'Mentés...' : 'Befejezés') : 'Következő →'}
-                </button>
-            </div>
+                <div className="mt-8 pt-6 border-t border-gray-100 flex justify-between items-center">
+                    <span className="text-gray-400 font-medium">Oldal {currentPage + 1} / {totalPages}</span>
+                    <Button
+                        onClick={handleNext}
+                        disabled={!isPageComplete() || submitting}
+                        isLoading={submitting}
+                        className="px-8"
+                    >
+                        {currentPage === totalPages - 1 ? 'Befejezés' : 'Következő →'}
+                    </Button>
+                </div>
+            </Card>
         </div>
     );
 };

@@ -39,13 +39,20 @@ export interface TrialData {
     // AI-Specific
     aiShown?: boolean;
     boxDrawn?: boolean;
-    box?: { x: number, y: number, width: number, height: number }; // Normalized or pixel? TBD by implementation
+    box?: Box; // Normalized or pixel? TBD by implementation
 
     // Interaction states
     initialDiagnosis?: 'igen' | 'nem';
     initialConfidence?: number;
     finalDiagnosis?: 'igen' | 'nem';
     finalConfidence?: number;
+}
+
+export interface Box {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
 }
 
 export interface Demographics {

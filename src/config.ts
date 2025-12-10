@@ -1,6 +1,6 @@
 export const CONFIG = {
   // Toggle debug mode for testing (e.g., shorter trial sequences)
-  IS_DEBUG_MODE: import.meta.env.VITE_DEBUG_MODE === 'true',
+  IS_DEBUG_MODE: true, // Hardcoded for immediate effect
 
   // Firestore Collection Names
   COLLECTIONS: {

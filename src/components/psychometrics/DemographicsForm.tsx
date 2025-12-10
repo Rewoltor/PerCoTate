@@ -4,6 +4,8 @@ import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import type { Demographics } from '../../types';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 interface DemographicsFormProps {
     onComplete: () => void;
@@ -44,63 +46,67 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
     };
 
     return (
-        <div className="max-w-md mx-auto mt-10 p-6 bg-white rounded shadow">
-            <h2 className="text-2xl font-bold mb-6">Demográfiai Adatok</h2>
-            <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <Card title="Demográfiai Adatok" className="max-w-lg w-full">
+                <form onSubmit={handleSubmit} className="space-y-6">
 
-                <div>
-                    <label className="block mb-1 font-semibold">Életkor (Age)</label>
-                    <input
-                        type="number"
-                        value={ageInput}
-                        onChange={(e) => setAgeInput(e.target.value)}
-                        className="w-full p-2 border rounded"
-                        required
-                        min="18"
-                        max="99"
-                    />
-                </div>
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Életkor</label>
+                        <input
+                            type="number"
+                            value={ageInput}
+                            onChange={(e) => setAgeInput(e.target.value)}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg"
+                            required
+                            min="18"
+                            max="99"
+                            disabled={submitting}
+                        />
+                    </div>
 
-                <div>
-                    <label className="block mb-1 font-semibold">Nem (Gender)</label>
-                    <select
-                        value={formData.gender}
-                        onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                        className="w-full p-2 border rounded"
-                        required
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Nem</label>
+                        <select
+                            value={formData.gender}
+                            onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            required
+                            disabled={submitting}
+                        >
+                            <option value="">-- Válasszon --</option>
+                            <option value="male">Férfi</option>
+                            <option value="female">Nő</option>
+                            <option value="other">Egyéb</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Tapasztalat</label>
+                        <select
+                            value={formData.experienceLevel}
+                            onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            required
+                            disabled={submitting}
+                        >
+                            <option value="">-- Válasszon --</option>
+                            <option value="student_1-3">Orvostanhallgató (1-3. év)</option>
+                            <option value="student_4-6">Orvostanhallgató (4-6. év)</option>
+                            <option value="resident">Rezidens</option>
+                            <option value="specialist">Szakorvos</option>
+                            <option value="other">Egyéb eü. dolgozó</option>
+                        </select>
+                    </div>
+
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        isLoading={submitting}
                     >
-                        <option value="">-- Válasszon --</option>
-                        <option value="male">Férfi</option>
-                        <option value="female">Nő</option>
-                        <option value="other">Egyéb</option>
-                    </select>
-                </div>
-
-                <div>
-                    <label className="block mb-1 font-semibold">Tapasztalat (Experience)</label>
-                    <select
-                        value={formData.experienceLevel}
-                        onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
-                        className="w-full p-2 border rounded"
-                        required
-                    >
-                        <option value="">-- Válasszon --</option>
-                        <option value="student_1-3">Orvostanhallgató (1-3. év)</option>
-                        <option value="student_4-6">Orvostanhallgató (4-6. év)</option>
-                        <option value="resident">Rezidens</option>
-                        <option value="specialist">Szakorvos</option>
-                        <option value="other">Egyéb eü. dolgozó</option>
-                    </select>
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full bg-blue-600 text-white py-2 rounded font-bold hover:bg-blue-700 disabled:opacity-50"
-                >
-                    {submitting ? 'Mentés...' : 'Tovább'}
-                </button>
-            </form>
+                        Tovább →
+                    </Button>
+                </form>
+            </Card>
         </div>
     );
 };

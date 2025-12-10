@@ -1,7 +1,9 @@
 import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-
+import { CONFIG } from '../config';
+import { Card } from '../components/ui/Card';
+import { Button } from '../components/ui/Button';
 
 export const LandingPage: React.FC = () => {
     const { user } = useAuth();
@@ -13,18 +15,22 @@ export const LandingPage: React.FC = () => {
     const isGroup0 = treatmentGroup === '0';
     const isPhase1 = currentPhase === 'phase1';
 
-    // Determine Status of steps
     // Data check helpers
     const hasDemographics = !!user.demographics;
-    const hasBig5 = !!user.big5; // Only Group 0 Phase 1 OR Group 1 Phase 2
-    const hasIQ = !!user.iq;     // Same as Big5
-    // Video is not persisted in main user object in plan? 
-    // Plan said: "I have watched" checkbox. But where stored? 
-    // Plan phase 5: "Video Module... checkbox". 
-    // We didn't add a field to Participant type for video. 
-    // Let's assume for MVP we check if we are navigating FROM video.
-    // Ideally we'd store `videoWatched: true`.
-    // Let's assume we navigate linearly.
+    const hasBig5 = !!user.big5;
+    const hasIQ = !!user.iq;
+
+    // Check Annotation Completion Logic
+    React.useEffect(() => {
+        if (!user) return;
+
+        const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
+        const completedCount = Object.keys(user.completedTrials || {}).length;
+
+        if (completedCount >= TOTAL_TRIALS) {
+            navigate('/completion');
+        }
+    }, [user, isPhase1, navigate]);
 
     // Determine Next Step Logic
     let nextPath = '';
@@ -43,7 +49,6 @@ export const LandingPage: React.FC = () => {
                 nextPath = 'iq';
                 statusMessage = "Következő lépés: Logikai teszt.";
             } else {
-                // Assuming Video is handled before Annotation or inseparable
                 nextPath = 'video';
                 statusMessage = "Következő lépés: Oktatóvideó és Gyakorlás.";
             }
@@ -59,13 +64,11 @@ export const LandingPage: React.FC = () => {
         }
     } else {
         // Phase 2
-        // Group 0 (was Control, now AI): Video -> Annotation
-        // Group 1 (was AI, now Control): Big 5 -> IQ -> Video -> Annotation
         if (isGroup0) {
             nextPath = 'video';
             statusMessage = "Üdvözöljük újra! Következő lépés: Oktatóvideó.";
         } else {
-            if (!hasBig5) { // Assuming Big5 wasn't done in Phase 1 for Group 1? Yes.
+            if (!hasBig5) {
                 nextPath = 'big5';
                 statusMessage = "Üdvözöljük újra! Következő lépés: Személyiségteszt.";
             } else if (!hasIQ) {
@@ -79,38 +82,47 @@ export const LandingPage: React.FC = () => {
     }
 
     const handleStart = () => {
-        // Build absolute path
-        // /phaseX/groupY/step
         navigate(`/${currentPhase}/group${treatmentGroup}/${nextPath}`);
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8 text-center px-4">
-            <h1 className="text-4xl font-bold mb-4 text-blue-900">
+            <h1 className="text-4xl font-bold mb-8 text-gray-900 tracking-tight">
                 {isPhase1 ? "Üdvözöljük az 1. fázisban!" : "Üdvözöljük a 2. fázisban!"}
             </h1>
 
-            <div className="bg-white p-8 rounded-xl shadow-lg max-w-2xl w-full">
-                <p className="text-xl mb-6 text-gray-700">
-                    {statusMessage}
-                </p>
+            <Card className="max-w-2xl w-full text-left">
+                <div className="text-center mb-8">
+                    <p className="text-xl text-gray-700 font-medium leading-relaxed">
+                        {statusMessage}
+                    </p>
+                </div>
 
-                <div className="bg-blue-50 p-4 rounded mb-8 text-left text-sm text-blue-800">
-                    <p className="font-bold mb-2">Státusz:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                        <li>Fázis: {isPhase1 ? "1. (Kezdeti)" : "2. (Kontroll/AI váltás)"}</li>
-                        <li>Csoport: {treatmentGroup === '0' ? "A" : "B"}</li>
-                        <li>Azonosító: <span className="font-mono">{user.userID}</span></li>
+                <div className="bg-blue-50 p-6 rounded-xl mb-8 border border-blue-100">
+                    <p className="font-bold mb-3 text-blue-900 text-sm uppercase tracking-wider">Státusz Információ</p>
+                    <ul className="space-y-2 text-blue-800 text-base">
+                        <li className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                            Fázis: <strong>{isPhase1 ? "1. (Kezdeti)" : "2. (Kontroll/AI váltás)"}</strong>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                            Csoport: <strong>{treatmentGroup === '0' ? "A" : "B"}</strong>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
+                            Azonosító: <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-600">{user.userID}</span>
+                        </li>
                     </ul>
                 </div>
 
-                <button
+                <Button
                     onClick={handleStart}
-                    className="px-8 py-4 bg-blue-600 text-white text-xl font-bold rounded-full hover:bg-blue-700 transform transition hover:scale-105 shadow-md"
+                    className="w-full py-5 text-xl"
                 >
                     Indítás →
-                </button>
-            </div>
+                </Button>
+            </Card>
         </div>
     );
 };

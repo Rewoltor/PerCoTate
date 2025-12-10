@@ -3,193 +3,245 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
-import type { TrialData } from '../../types';
+import { Button } from '../ui/Button';
+import { BBoxTool } from '../common/BBoxTool'; // Import real tool
+import { getAIPrediction } from '../../utils/aiLookup';
+import type { TrialData, Box } from '../../types';
 
 interface NoAITrialProps {
-    onComplete: () => void; // Called when all trials are done
+    onComplete: () => void;
 }
 
 export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     const { user } = useAuth();
     const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
     const [loading, setLoading] = useState(true);
+
+    // Annotation State
+    const [userBox, setUserBox] = useState<Box | null>(null);
     const [diagnosis, setDiagnosis] = useState<'igen' | 'nem' | null>(null);
     const [confidence, setConfidence] = useState<number | null>(null);
+    const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
+
     const [saving, setSaving] = useState(false);
     const [startTime, setStartTime] = useState<number>(Date.now());
 
-    // Determine actual trial count based on debug mode
+    // Computed
+    const canDraw = true; // Always allow drawing in this simplified flow
+    const canSubmit = diagnosis && confidence; // Submit only depends on diagnosis and confidence
+
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
 
+    // Initialize from User Context
+    // Initialize from User Context
     useEffect(() => {
         if (user) {
-            // Logic to resume: Check which trials are already in 'completedTrials' map
-            // But for simplicity in this MVP step, we might just calculate based on map size?
             const completedCount = Object.keys(user.completedTrials || {}).length;
             if (completedCount >= TOTAL_TRIALS) {
                 onComplete();
-            } else {
+                return;
+            }
+            // Fix: Only update if the remote count is GREATER than local.
+            // This prevents stale Firestore data (which might still be N) from overwriting
+            // our optimistic local state (N+1) after we clicked "Next".
+            // It also correctly handles the initial load (local=0, remote=N).
+            if (completedCount > currentTrialIndex) {
                 setCurrentTrialIndex(completedCount);
             }
-            setLoading(false);
-            setStartTime(Date.now());
         }
-    }, [user, onComplete, TOTAL_TRIALS]);
+    }, [user, onComplete, TOTAL_TRIALS, currentTrialIndex]);
+
+    // Handle Image Load - Dependent on index change
+    useEffect(() => {
+        if (!user) return;
+        const imgId = user.imageSequence[currentTrialIndex];
+
+        if (imgId === undefined) return;
+
+        setLoading(true);
+        // Clear previous image URL to show loader
+        setCurrentImageUrl('');
+
+        getAIPrediction(imgId)
+            .then(data => {
+                if (data && data.imageName) {
+                    setCurrentImageUrl(data.imageName);
+                } else {
+                    console.error(`No AI data found for image ID: ${imgId}`);
+                }
+            })
+            .catch(err => {
+                console.error("Error fetching AI prediction:", err);
+            })
+            .finally(() => {
+                setLoading(false);
+                // Reset form state here when new image loads
+                setUserBox(null);
+                setDiagnosis(null);
+                setConfidence(null);
+                setStartTime(Date.now());
+            });
+    }, [currentTrialIndex, user]);
+
+    // Removed separate reset effect to avoid race conditions
+    // State reset is now handled in the image load chain ensure synchronization
+
+    const handleBoxChange = (box: Box | null) => {
+        setUserBox(box);
+    };
 
     const handleNext = async () => {
-        if (!user || diagnosis === null || confidence === null) return;
+        if (!user || !canSubmit) return;
 
         setSaving(true);
         const endTime = Date.now();
-
         const imageId = user.imageSequence[currentTrialIndex];
-        if (!imageId) {
-            console.error("No image ID found for index", currentTrialIndex);
-            return;
-        }
-
-        // Construct Trial Data
-        // Trial ID can be sequential "trial_1" or "img_ID" based.
-        // Recommended: "trial_{index}" to preserve order, or "img_{id}" to key by image.
-        // Plan says: participants/{id}/trials/{trialId}
         const trialId = `trial_${currentTrialIndex + 1}`;
 
         const trialData: TrialData = {
             trialId,
-            imageName: `img_${imageId}.png`, // Assuming PNG format
+            imageName: `img_${imageId}.png`, // Legacy field, mostly unused if we link by ID
             startTime,
             endTime,
             diagnosis,
             confidence,
-            // No-AI specific fields
-            aiShown: false
+            aiShown: false,
+            // Add box data if present
+            ...(userBox ? { box: userBox } : {})
         };
 
         try {
-            // 1. Save Trial Data
             const trialRef = doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID, 'trials', trialId);
             await setDoc(trialRef, trialData);
 
-            // 2. Update Participant Progress (Atomic update preferred but setDoc merge is okay here)
             const userRef = doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID);
-            // We need to update the local 'completedTrials' map in Firestore
-            // Using dot notation for map update: "completedTrials.trial_X": true
             await setDoc(userRef, {
-                completedTrials: {
-                    [trialId]: true
-                }
+                completedTrials: { [trialId]: true }
             }, { merge: true });
 
-            // 3. Move to next
-            // We should ideally update the local 'user' context state too, 
-            // but strictly we can just increment local index and let refresh handle the rest?
-            // Better to force local increment for smooth UX.
             if (currentTrialIndex + 1 >= TOTAL_TRIALS) {
                 onComplete();
             } else {
                 setCurrentTrialIndex(prev => prev + 1);
-                setDiagnosis(null);
-                setConfidence(null);
-                setStartTime(Date.now());
             }
 
         } catch (err) {
             console.error("Error saving trial:", err);
-            alert("Failed to save data. Please try again.");
+            alert("Hiba történt a mentéskor.");
         } finally {
             setSaving(false);
         }
     };
 
-    if (loading) return <div>Loading trial...</div>;
-    if (!user) return <div>No user found.</div>;
-
-    const currentImageId = user.imageSequence[currentTrialIndex];
+    if (loading && !currentImageUrl) return <div className="p-10 text-center">Betöltés...</div>;
+    if (!user) return null;
 
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-4">
-            <div className="w-full max-w-4xl bg-white shadow-lg rounded-lg overflow-hidden">
+        <div className="h-screen flex flex-col bg-gray-50 text-gray-800 font-sans overflow-hidden">
+            {/* Header */}
+            <header className="flex-none h-16 bg-white border-b px-8 flex items-center justify-between shadow-sm z-10">
+                <div className="text-2xl font-bold tracking-tight text-gray-900">
+                    PerCoTate <span className="text-blue-600">Control</span>
+                </div>
+                <div className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                    {user?.userID || 'User'}
+                </div>
+            </header>
 
-                {/* Header */}
-                <div className="p-4 bg-gray-50 border-b flex justify-between">
-                    <span className="font-bold text-lg">Trial {currentTrialIndex + 1} / {TOTAL_TRIALS}</span>
-                    <span className="text-gray-500">Image ID: {currentImageId}</span>
+            <div className="flex-1 flex overflow-hidden">
+                {/* Left: Canvas */}
+                <div className="flex-1 bg-black relative flex items-center justify-center p-4">
+                    <div className="relative w-full h-full flex items-center justify-center">
+                        {loading && (
+                            <div className="absolute inset-0 flex items-center justify-center text-white z-10">
+                                <span className="text-lg font-medium animate-pulse">Kép betöltése...</span>
+                            </div>
+                        )}
+                        <div className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} w-full h-full`}>
+                            {currentImageUrl ? (
+                                <BBoxTool
+                                    src={currentImageUrl}
+                                    enabled={canDraw}
+                                    onChange={handleBoxChange}
+                                    overlayBox={userBox}
+                                />
+                            ) : (
+                                !loading && <div className="text-white text-center">Hiba: A kép nem tölthető be.</div>
+                            )}
+                        </div>
+                    </div>
                 </div>
 
-                {/* Image Area */}
-                <div className="bg-black min-h-[400px] flex items-center justify-center">
-                    {/* Image Source: assuming /annotation/img_{id}.png */}
-                    <img
-                        src={`/annotation/img_${currentImageId}.png`}
-                        alt={`X-Ray ${currentImageId}`}
-                        className="max-h-[600px] object-contain"
-                    />
-                </div>
-
-                {/* Controls */}
-                <div className="p-6 space-y-6">
-
-                    {/* Diagnosis */}
+                {/* Right: Controls */}
+                <div className="w-[400px] bg-white border-l p-6 flex flex-col gap-8 overflow-y-auto shadow-xl z-20">
                     <div>
-                        <h3 className="text-lg font-semibold mb-3">Látható-e arthritisz jele? (Is arthritis visible?)</h3>
-                        <div className="flex gap-4">
-                            <button
-                                onClick={() => setDiagnosis('igen')}
-                                className={`px-6 py-3 rounded-md border-2 font-medium transition-colors ${diagnosis === 'igen'
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'border-gray-300 hover:border-blue-400'
-                                    }`}
-                            >
-                                IGEN (Yes)
-                            </button>
-                            <button
-                                onClick={() => setDiagnosis('nem')}
-                                className={`px-6 py-3 rounded-md border-2 font-medium transition-colors ${diagnosis === 'nem'
-                                    ? 'bg-blue-600 text-white border-blue-600'
-                                    : 'border-gray-300 hover:border-blue-400'
-                                    }`}
-                            >
-                                NEM (No)
-                            </button>
-                        </div>
+                        <h2 className="text-xl font-bold mb-1 text-gray-900">{currentTrialIndex + 1}. Eset / {TOTAL_TRIALS}</h2>
+                        <p className="text-gray-500 text-sm">Kontroll csoport (AI nélkül)</p>
                     </div>
 
-                    {/* Confidence */}
-                    {diagnosis && (
+                    <div className="space-y-6">
+                        {/* 1. Diagnosis Decision - Now Step 1 */}
                         <div>
-                            <h3 className="text-lg font-semibold mb-3">Mennyire biztos a döntésében? (Confidence: 1-7)</h3>
-                            <div className="flex gap-2">
-                                {[1, 2, 3, 4, 5, 6, 7].map(num => (
-                                    <button
-                                        key={num}
-                                        onClick={() => setConfidence(num)}
-                                        className={`w-12 h-12 rounded-full font-bold border-2 transition-all ${confidence === num
-                                            ? 'bg-blue-600 text-white border-blue-600 scale-110'
-                                            : 'border-gray-300 hover:border-blue-400'
-                                            }`}
-                                    >
-                                        {num}
-                                    </button>
-                                ))}
-                            </div>
-                            <div className="flex justify-between w-[360px] text-xs text-gray-500 mt-1 px-1">
-                                <span>Bizonytalan (Unsure)</span>
-                                <span>Biztos (Sure)</span>
+                            <label className="block font-semibold mb-3 text-gray-700 text-lg">1. Diagnózis</label>
+                            <div className="flex gap-4">
+                                <button
+                                    onClick={() => setDiagnosis('igen')}
+                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                        ${diagnosis === 'igen'
+                                            ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
+                                >
+                                    IGEN
+                                </button>
+                                <button
+                                    onClick={() => {
+                                        setDiagnosis('nem');
+                                        setUserBox(null); // Clear box if No is selected
+                                    }}
+                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                        ${diagnosis === 'nem'
+                                            ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
+                                            : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
+                                >
+                                    NEM
+                                </button>
                             </div>
                         </div>
-                    )}
 
-                    {/* Submit */}
-                    <div className="pt-4 border-t flex justify-end">
-                        <button
+                        {/* 2. Confidence Rating - Now Step 2 */}
+                        {diagnosis && (
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
+                                <label className="block font-semibold mb-3 text-lg text-gray-700">2. Biztonság (1-7)</label>
+                                <div className="grid grid-cols-7 gap-1">
+                                    {[1, 2, 3, 4, 5, 6, 7].map(num => (
+                                        <button
+                                            key={num}
+                                            onClick={() => setConfidence(num)}
+                                            className={`aspect-square rounded-lg border-2 font-bold text-lg transition-all transform hover:scale-105
+                                                ${confidence === num
+                                                    ? 'bg-gray-900 border-gray-900 text-white shadow-lg'
+                                                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
+                                        >
+                                            {num}
+                                        </button>
+                                    ))}
+                                </div>
+                                <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium uppercase tracking-wide px-1">
+                                    <span>Bizonytalan</span>
+                                    <span>Biztos</span>
+                                </div>
+                            </div>
+                        )}
+
+                        <Button
                             onClick={handleNext}
-                            disabled={!diagnosis || !confidence || saving}
-                            className="px-8 py-3 bg-green-600 text-white font-bold rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={!canSubmit || saving}
+                            className="w-full mt-4"
+                            isLoading={saving}
                         >
-                            {saving ? 'Mentés...' : 'Tovább (Next) →'}
-                        </button>
+                            Beküldés →
+                        </Button>
                     </div>
-
                 </div>
             </div>
         </div>

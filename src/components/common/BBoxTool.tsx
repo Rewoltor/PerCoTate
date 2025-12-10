@@ -186,13 +186,13 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
     }, [src]);
 
     return (
-        <div className="w-full flex flex-col items-center">
-            <div className="relative border rounded-md overflow-hidden bg-black" style={{ minHeight: '300px' }}>
+        <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
+            <div className="relative flex-shrink-0" style={{ maxHeight: 'calc(100% - 60px)', maxWidth: '100%' }}>
                 <img
                     ref={imgRef}
                     src={src}
                     alt="annotation"
-                    className="max-h-[60rem] object-contain block select-none"
+                    className="max-h-full max-w-full object-contain block select-none"
                     draggable={false}
                 />
                 <canvas
@@ -200,7 +200,6 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
-                    // Touch events usually handled by pointer events in modern React, but explicit touch might be needed for scroll prevention
                     style={{
                         position: 'absolute',
                         left: 0,
@@ -208,20 +207,24 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
                         width: '100%',
                         height: '100%',
                         pointerEvents: enabled ? 'auto' : 'none',
-                        touchAction: 'none', // Critical for drawing on mobile
+                        touchAction: 'none',
                         cursor: enabled ? 'crosshair' : 'default',
                     }}
                 />
             </div>
 
-            {/* External controls if needed, e.g. Clear */}
+            {/* External controls - Absolutely positioned to prevent layout shift */}
             {enabled && (
-                <div className="mt-2 text-sm text-gray-500">
-                    {displayBox ? (
-                        <button onClick={clearBox} className="text-red-500 hover:underline">Clear Box</button>
-                    ) : (
-                        <span>Draw a box around the finding</span>
-                    )}
+                <div className="absolute bottom-6 left-0 right-0 text-center text-base font-medium text-gray-300 pointer-events-none">
+                    <div className="pointer-events-auto inline-block">
+                        {displayBox ? (
+                            <button onClick={clearBox} className="text-red-400 hover:text-red-300 transition-colors underline decoration-2 underline-offset-4">
+                                Törlés
+                            </button>
+                        ) : (
+                            <span className="opacity-80">Rajzolja be a dobozt a képen</span>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

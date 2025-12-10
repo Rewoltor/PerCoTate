@@ -3,6 +3,8 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 import type { IQResponse } from '../../types';
 
 interface IQTestProps {
@@ -94,7 +96,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
         }
     }, [finished]);
 
-    if (finished && submitting) return <div className="text-center p-8">Eredmények mentése...</div>;
+    if (finished && submitting) return <div className="text-center p-8 text-xl font-bold text-gray-700">Eredmények mentése...</div>;
 
     const q = IQ_QUESTIONS[currentQuestion];
     const formatTime = (s: number) => {
@@ -104,46 +106,57 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
     };
 
     return (
-        <div className="max-w-2xl mx-auto mt-8 p-6 bg-white rounded shadow text-center">
-            <div className="flex justify-between items-center mb-6 border-b pb-4">
-                <h2 className="text-xl font-bold">Logika Teszt (Raven)</h2>
-                <div className={`font-mono font-bold text-lg ${timeLeft < 60 ? 'text-red-500' : 'text-gray-700'}`}>
-                    Idő: {formatTime(timeLeft)}
-                </div>
-            </div>
-
-            <div className="mb-8">
-                <p className="mb-4 text-gray-600">
-                    Kérdés {currentQuestion + 1} / {IQ_QUESTIONS.length}
-                </p>
-
-                <div className="bg-gray-200 h-64 flex items-center justify-center mb-6 rounded text-gray-500">
-                    [Ide jönne a Raven Mátrix Kép #{q.id}]
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <Card className="max-w-2xl w-full">
+                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
+                    <h2 className="text-2xl font-bold text-gray-900">Logika Teszt (Raven)</h2>
+                    <div className={`font-mono font-bold text-xl px-4 py-2 rounded-lg bg-gray-50 ${timeLeft < 60 ? 'text-red-500 bg-red-50' : 'text-gray-700'}`}>
+                        {formatTime(timeLeft)}
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 max-w-md mx-auto">
-                    {q.options.map(opt => (
-                        <button
-                            key={opt}
-                            onClick={() => handleSelect(opt)}
-                            className={`p-4 border rounded font-bold transition-colors ${answers[q.id] === opt
-                                ? 'bg-blue-600 text-white'
-                                : 'hover:bg-gray-50'
-                                }`}
-                        >
-                            Opció {opt}
-                        </button>
-                    ))}
-                </div>
-            </div>
+                <div className="mb-8">
+                    <div className="flex justify-between items-end mb-4">
+                        <span className="text-gray-500 font-medium">Kérdés {currentQuestion + 1} / {IQ_QUESTIONS.length}</span>
+                        <div className="h-2 w-32 bg-gray-100 rounded-full overflow-hidden">
+                            <div
+                                className="h-full bg-blue-500 transition-all duration-300"
+                                style={{ width: `${((currentQuestion + 1) / IQ_QUESTIONS.length) * 100}%` }}
+                            />
+                        </div>
+                    </div>
 
-            <button
-                onClick={handleNext}
-                disabled={!answers[q.id]}
-                className="px-8 py-2 bg-green-600 text-white rounded font-bold hover:bg-green-700 disabled:opacity-50"
-            >
-                {currentQuestion === IQ_QUESTIONS.length - 1 ? 'Befejezés' : 'Következő'}
-            </button>
+                    <div className="bg-white border-2 border-gray-100 h-64 flex items-center justify-center mb-8 rounded-xl shadow-inner text-gray-400 font-medium bg-gray-50/50">
+                        [Raven Mátrix Kép #{q.id} Helye]
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
+                        {q.options.map(opt => (
+                            <button
+                                key={opt}
+                                onClick={() => handleSelect(opt)}
+                                className={`p-6 border-2 rounded-xl font-bold text-xl transition-all duration-200 transform hover:scale-[1.02] 
+                                    ${answers[q.id] === opt
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                                    }`}
+                            >
+                                {opt}
+                            </button>
+                        ))}
+                    </div>
+                </div>
+
+                <div className="flex justify-end pt-4 border-t border-gray-100">
+                    <Button
+                        onClick={handleNext}
+                        disabled={!answers[q.id]}
+                        className="w-full sm:w-auto px-10"
+                    >
+                        {currentQuestion === IQ_QUESTIONS.length - 1 ? 'Befejezés' : 'Következő →'}
+                    </Button>
+                </div>
+            </Card>
         </div>
     );
 };

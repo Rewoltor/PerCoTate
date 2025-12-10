@@ -1,62 +1,57 @@
 import React, { useState, useRef } from 'react';
+import { Card } from '../ui/Card';
+import { Button } from '../ui/Button';
 
 interface VideoModuleProps {
-    videoSrc: string; // URL or path in public
     onComplete: () => void;
+    videoSrc?: string; // Optional custom URL
 }
 
-export const VideoModule: React.FC<VideoModuleProps> = ({ videoSrc, onComplete }) => {
+export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc }) => {
     const [watched, setWatched] = useState(false);
-    const [checked, setChecked] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+
+    // Hardcoded demo video logic if no URL
+    // For production, use real URL or Firebase Storage link
+    const src = videoSrc || "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
 
     const handleEnded = () => {
         setWatched(true);
     };
 
-    const handleContinue = () => {
-        if (watched && checked) {
-            onComplete();
-        }
-    };
-
     return (
-        <div className="max-w-4xl mx-auto mt-8 p-6 bg-white rounded shadow text-center">
-            <h2 className="text-2xl font-bold mb-4">Oktatóvideó</h2>
-            <p className="mb-6 text-gray-600">Kérjük, nézze végig a videót a folytatáshoz.</p>
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+            <Card className="max-w-4xl w-full">
+                <div className="text-center mb-6">
+                    <h2 className="text-3xl font-bold mb-4 text-gray-900">Oktatóvideó</h2>
+                    <p className="text-gray-600 max-w-2xl mx-auto">
+                        Kérjük, nézze végig figyelmesen az alábbi videót a feladat megértéséhez.
+                        A "Tovább" gomb csak a videó végignézése után válik aktívvá.
+                    </p>
+                </div>
 
-            <div className="bg-black aspect-video mb-6 flex justify-center items-center">
-                <video
-                    ref={videoRef}
-                    src={videoSrc}
-                    controls
-                    className="w-full h-full"
-                    onEnded={handleEnded}
-                >
-                    A böngésző nem támogatja a videó lejátszást.
-                </video>
-            </div>
+                <div className="bg-black rounded-2xl overflow-hidden shadow-2xl mb-8 border-4 border-gray-900 mx-auto max-w-3xl ring-4 ring-gray-100">
+                    <video
+                        ref={videoRef}
+                        src={src}
+                        controls
+                        className="w-full h-auto aspect-video"
+                        onEnded={handleEnded}
+                    >
+                        Böngészője nem támogatja a videólejátszást.
+                    </video>
+                </div>
 
-            <div className="flex flex-col items-center gap-4">
-                <label className={`flex items-center gap-2 cursor-pointer ${!watched ? 'opacity-50' : ''}`}>
-                    <input
-                        type="checkbox"
-                        checked={checked}
-                        onChange={(e) => setChecked(e.target.checked)}
+                <div className="flex justify-center">
+                    <Button
+                        onClick={onComplete}
                         disabled={!watched}
-                        className="w-5 h-5"
-                    />
-                    <span className="font-medium">Megnéztem és megértettem az oktatóvideót.</span>
-                </label>
-
-                <button
-                    onClick={handleContinue}
-                    disabled={!watched || !checked}
-                    className="px-8 py-3 bg-green-600 text-white font-bold rounded hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    Tovább a feladatra
-                </button>
-            </div>
+                        className="px-12 py-4 text-xl shadow-xl shadow-blue-200"
+                    >
+                        Tovább a Gyakorlásra →
+                    </Button>
+                </div>
+            </Card>
         </div>
     );
 };
