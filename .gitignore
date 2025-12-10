@@ -42,3 +42,6 @@ ui-debug.log*
 *.njsproj
 *.sln
 *.sw?
+
+# Reference Code
+DANNY-redo/
