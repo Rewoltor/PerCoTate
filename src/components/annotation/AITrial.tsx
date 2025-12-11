@@ -7,7 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 // import type { TrialData } from '../../types';
 import { getAIPrediction } from '../../utils/aiLookup';
 import { calculateIoU, type Box } from '../../utils/math';
-import { BBoxTool } from '../common/BBoxTool';
+import { BBoxTool, type ColoredBox } from '../common/BBoxTool';
 import { AIFeedbackModal } from './AIFeedbackModal';
 import { PreConfidenceModal } from './PreConfidenceModal';
 
@@ -24,8 +24,14 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     const [step, setStep] = useState<Step>('initial');
 
     // Data State
-    const [symptomType, setSymptomType] = useState<string>(''); // 'tunet' | 'bizonytalan' | 'nincsen'
-    const [userBox, setUserBox] = useState<Box | null>(null);
+    const [symptom1, setSymptom1] = useState<string>('');
+    const [box1, setBox1] = useState<Box | null>(null);
+
+    const [symptom2, setSymptom2] = useState<string>('');
+    const [box2, setBox2] = useState<Box | null>(null);
+
+    const [activeBoxId, setActiveBoxId] = useState<string | null>(null);
+
     const [initialDiagnosis, setInitialDiagnosis] = useState<'igen' | 'nem' | null>(null);
     const [initialConfidence, setInitialConfidence] = useState<number | null>(null);
     const [finalDiagnosis, setFinalDiagnosis] = useState<'igen' | 'nem' | null>(null);
@@ -38,28 +44,29 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     // Constants
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
 
-    // 1. Initialization Effect: Set starting index based on user progress (only once or when user changes)
+    // 1. Initialization Effect
     useEffect(() => {
         if (user) {
-            const completedCount = Object.keys(user.completedTrials || {}).length;
+            const isPhase2 = user.currentPhase === 'phase2';
+            const trialsMap = isPhase2 ? (user.completedTrialsPhase2 || {}) : (user.completedTrials || {});
+            const completedCount = Object.keys(trialsMap).length;
+
             if (completedCount >= TOTAL_TRIALS) {
                 onComplete();
             } else {
-                // Only sync if we haven't started locally properly, or force sync on mount
-                // Since this effect doesn't depend on currentTrialIndex, it won't re-run on local updates
                 if (currentTrialIndex === 0 && completedCount > 0) {
                     setCurrentTrialIndex(completedCount);
                 }
             }
         }
-    }, [user, TOTAL_TRIALS]); // REMOVED currentTrialIndex dependency
+    }, [user, TOTAL_TRIALS]);
 
-    // 2. Data Loading Effect: Runs whenever currentTrialIndex changes
+    // 2. Data Loading Effect
     useEffect(() => {
         if (user) {
-            // Check bounds
             if (currentTrialIndex < TOTAL_TRIALS) {
-                const imgId = user.imageSequence[currentTrialIndex];
+                const sequence = user.currentPhase === 'phase2' ? (user.imageSequencePhase2 || user.imageSequence) : user.imageSequence;
+                const imgId = sequence[currentTrialIndex];
                 if (imgId !== undefined) {
                     loadTrialData(imgId);
                 }
@@ -67,21 +74,16 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                 onComplete();
             }
         }
-    }, [currentTrialIndex, user]); // user is needed for imageSequence access
+    }, [currentTrialIndex, user]);
 
     const loadTrialData = async (imageId: number) => {
         setLoading(true);
-        const data = await getAIPrediction(imageId); // Default phaseFilter='baseline'
-        // If data is missing (e.g. index out of CSV range since we have random IDs 1..50 but CSV example has only 5 lines),
-        // we must handle it to avoid infinite loading.
+        const data = await getAIPrediction(imageId);
         if (!data) {
             console.error(`No AI data found for imageId: ${imageId}`);
-            // Fallback for DEV/DEBUG so app doesn't freeze?
-            // Or show error
-            // For now, let's create a dummy fallback to unblock the UI
             setAiData({
                 id: `fallback_${imageId}`,
-                imageName: `/dataset/no_map/fallback.png`, // User should ensure 1..50 exist in CSV
+                imageName: `/dataset/no_map/fallback.png`,
                 phase: 'fallback',
                 diagnosis: 'nem',
                 confidence: 0,
@@ -94,8 +96,11 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
         // Reset State
         setStep('initial');
-        setSymptomType('');
-        setUserBox(null);
+        setSymptom1('');
+        setBox1(null);
+        setSymptom2('');
+        setBox2(null);
+        setActiveBoxId(null);
         setInitialDiagnosis(null);
         setInitialConfidence(null);
         setFinalDiagnosis(null);
@@ -106,15 +111,30 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     };
 
     // Logic Helpers
-    const canDraw = symptomType === 'tunet' || symptomType === 'bizonytalan';
-    const isBoxValid = () => {
-        if (symptomType === 'tunet') return !!userBox; // Mandatory
-        if (symptomType === 'nincsen') return true; // No box allowed
+    const isBoxValid = (symptom: string, box: Box | null) => {
+        if (symptom === 'tunet') return !!box; // Mandatory
+        if (symptom === 'nincsen') return true; // No box allowed
         return true; // Optional for unsure
     };
 
+    const isValidSubmit = () => {
+        if (!initialDiagnosis) return false;
+        if (!symptom1 || !isBoxValid(symptom1, box1)) return false;
+        if (!symptom2 || !isBoxValid(symptom2, box2)) return false;
+        return true;
+    };
+
+    const handleBoxChange = (id: string, box: Box | null) => {
+        if (id === 'box1') setBox1(box);
+        if (id === 'box2') setBox2(box);
+
+        // Auto-stop drawing after creating a box? Or keep drawing?
+        // Usually safer to stop to allow scroll/etc.
+        if (box) setActiveBoxId(null);
+    };
+
     const handleInitialSubmit = () => {
-        if (!initialDiagnosis || !isBoxValid()) return;
+        if (!isValidSubmit()) return;
         setStep('pre-confidence');
     };
 
@@ -125,7 +145,6 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
     const handleFeedbackRevise = (newDecision: 'igen' | 'nem') => {
         setFinalDiagnosis(newDecision);
-        // step -> post-confidence (handled by onContinue)
     };
 
     const handleFeedbackContinue = () => {
@@ -136,10 +155,14 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
         if (!user) return;
         console.log("Submitting final trial...", { conf, currentTrialIndex });
         setFinalConfidence(conf);
-        setLoading(true); // Saving UI
+        setLoading(true);
 
-        const imageId = user.imageSequence[currentTrialIndex];
-        const trialId = `trial_${currentTrialIndex + 1}`; // Fixed typo: removed trailing space
+        const isPhase2 = user.currentPhase === 'phase2';
+        const sequence = isPhase2 ? (user.imageSequencePhase2 || user.imageSequence) : user.imageSequence;
+        const imageId = sequence[currentTrialIndex];
+
+        const trialIdPrefix = isPhase2 ? 'p2_trial' : 'trial';
+        const trialId = `${trialIdPrefix}_${currentTrialIndex + 1}`;
 
         const trialData: any = {
             trialId,
@@ -150,8 +173,15 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             diagnosis: finalDiagnosis!,
             confidence: conf,
 
+            // New Data Fields
+            symptom1,
+            symptom2,
+            box1,
+            box2,
+
+            revertedDecision: initialDiagnosis !== finalDiagnosis,
+
             aiShown: true,
-            boxDrawn: !!userBox,
 
             initialDiagnosis: initialDiagnosis!,
             initialConfidence: initialConfidence!,
@@ -159,30 +189,25 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             finalConfidence: conf,
         };
 
-        // Firestore helper: Only add 'box' if it exists. NEVER pass undefined.
-        if (userBox) {
-            trialData.box = userBox;
-        }
-
         try {
             await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID, 'trials', trialId), trialData);
-            await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID), {
-                completedTrials: { [trialId]: true }
-            }, { merge: true });
 
-            console.log("Trial saved successfully:", trialId);
+            const userRef = doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID);
+            const updatePayload = isPhase2
+                ? { completedTrialsPhase2: { ...user.completedTrialsPhase2, [trialId]: true } }
+                : { completedTrials: { ...user.completedTrials, [trialId]: true } };
 
-            // Next
+            await setDoc(userRef, updatePayload, { merge: true });
+
             if (currentTrialIndex + 1 >= TOTAL_TRIALS) {
                 onComplete();
             } else {
                 setCurrentTrialIndex(prev => prev + 1);
-                // Trigger useEffect via index change
             }
 
         } catch (e) {
             console.error("Save error", e);
-            alert("Hiba a mentéskor. Kérjük próbálja újra. (Save Error)");
+            alert("Hiba a mentéskor. Kérjük próbálja újra.");
         } finally {
             setLoading(false);
         }
@@ -190,10 +215,17 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
     if (loading || !aiData || !user) return <div>Loading AI Trial...</div>;
 
-    // const currentImageId = user.imageSequence[currentTrialIndex];
+    // IoU Calculation (Max IoU of either box?)
+    // This is just for UI visualization if needed.
+    // Assuming AI has 1 box.
+    const iou1 = (box1 && aiData.box) ? calculateIoU(box1, aiData.box) : 0;
+    const iou2 = (box2 && aiData.box) ? calculateIoU(box2, aiData.box) : 0;
+    const maxIoU = Math.max(iou1, iou2);
 
-    // Calculate IoU only when needed
-    const iou = (userBox && aiData.box) ? calculateIoU(userBox, aiData.box) : 0;
+    // Prepare boxes for BBoxTool
+    const displayBoxes: ColoredBox[] = [];
+    if (box1) displayBoxes.push({ id: 'box1', box: box1, color: '#10b981', label: '1' });
+    if (box2) displayBoxes.push({ id: 'box2', box: box2, color: '#3b82f6', label: '2' });
 
     return (
         <div className="flex flex-col h-screen bg-gray-50">
@@ -201,8 +233,8 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             {step === 'pre-confidence' && (
                 <PreConfidenceModal
                     imageSrc={aiData.imageName}
-                    userBox={userBox}
-                    symptomType={symptomType}
+                    userBoxes={displayBoxes}
+                    activeDiagnosis={initialDiagnosis!}
                     onConfidenceSelect={handlePreConfidenceSubmit}
                 />
             )}
@@ -210,15 +242,15 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             {(step === 'feedback' || step === 'post-confidence') && (
                 <AIFeedbackModal
                     imageSrc={aiData.imageName}
-                    userBox={userBox}
+                    userBoxes={displayBoxes}
                     aiBox={aiData.box}
                     aiPrediction={aiData.diagnosis}
                     aiConfidence={aiData.confidence}
-                    iouPercent={iou}
+                    iouPercent={maxIoU}
                     initialDecision={initialDiagnosis}
                     heatmapPath={aiData.heatmapPath}
                     onRevise={handleFeedbackRevise}
-                    onContinue={handleFeedbackContinue} // Just updates internal state if needed, mostly handled by modal now
+                    onContinue={handleFeedbackContinue}
                     onFinalSubmit={handleFinalSubmit}
                 />
             )}
@@ -229,9 +261,10 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                 <div className="flex-1 bg-gray-950 flex items-center justify-center relative">
                     <BBoxTool
                         src={aiData.imageName}
-                        onChange={setUserBox}
-                        enabled={step === 'initial' && canDraw}
-                    // We could show overlay here if needed, but per design AI only shows in Modal
+                        boxes={displayBoxes}
+                        activeBoxId={step === 'initial' ? activeBoxId : null}
+                        onChange={handleBoxChange}
+                        enabled={step === 'initial'}
                     />
                 </div>
 
@@ -242,81 +275,143 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                         <p className="text-gray-500 text-sm">AI Asszisztenssel</p>
                     </div>
 
-                    {/* Step 1: Initial Diagnosis Flow */}
                     {step === 'initial' && (
-                        <div className="space-y-6">
-                            {/* 1. Classification */}
-                            <div>
-                                <label className="block font-semibold mb-2 text-lg">1. Mit lát?</label>
-                                <select
-                                    value={symptomType}
-                                    onChange={(e) => {
-                                        setSymptomType(e.target.value);
-                                        if (e.target.value === 'nincsen') setUserBox(null);
-                                    }}
-                                    className="w-full p-3 border rounded-lg text-lg bg-white"
-                                >
-                                    <option value="" disabled>-- Válasszon --</option>
-                                    <option value="tunet">Tünet</option>
-                                    <option value="bizonytalan">Bizonytalan</option>
-                                    <option value="nincsen">Nincsen Tünet</option>
-                                </select>
+                        <div className="space-y-8">
+
+                            {/* Section 1: Findings */}
+                            <div className="space-y-6">
+                                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">1. Mit lát?</h3>
+
+                                {/* Finding 1 */}
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="font-semibold text-gray-700">1. Terület (Zöld)</label>
+                                        <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
+                                    </div>
+
+                                    <select
+                                        value={symptom1}
+                                        onChange={(e) => {
+                                            setSymptom1(e.target.value);
+                                            if (e.target.value === 'nincsen') {
+                                                setBox1(null);
+                                                if (activeBoxId === 'box1') setActiveBoxId(null);
+                                            }
+                                        }}
+                                        className="w-full p-2 border rounded mb-3 bg-white"
+                                    >
+                                        <option value="" disabled>-- Válasszon --</option>
+                                        <option value="tunet">Tünet</option>
+                                        <option value="bizonytalan">Bizonytalan</option>
+                                        <option value="nincsen">Nincsen Tünet</option>
+                                    </select>
+
+                                    {(symptom1 === 'tunet' || symptom1 === 'bizonytalan') && (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setActiveBoxId(activeBoxId === 'box1' ? null : 'box1')}
+                                                className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${activeBoxId === 'box1' ? 'bg-emerald-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                                            >
+                                                {activeBoxId === 'box1' ? 'Rajzolás...' : 'Rajzolás'}
+                                            </button>
+                                            {box1 && (
+                                                <button
+                                                    onClick={() => setBox1(null)}
+                                                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded text-sm"
+                                                >
+                                                    Törlés
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Finding 2 */}
+                                <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                                    <div className="flex items-center justify-between mb-2">
+                                        <label className="font-semibold text-gray-700">2. Terület (Kék)</label>
+                                        <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                                    </div>
+
+                                    <select
+                                        value={symptom2}
+                                        onChange={(e) => {
+                                            setSymptom2(e.target.value);
+                                            if (e.target.value === 'nincsen') {
+                                                setBox2(null);
+                                                if (activeBoxId === 'box2') setActiveBoxId(null);
+                                            }
+                                        }}
+                                        className="w-full p-2 border rounded mb-3 bg-white"
+                                    >
+                                        <option value="" disabled>-- Válasszon --</option>
+                                        <option value="tunet">Tünet</option>
+                                        <option value="bizonytalan">Bizonytalan</option>
+                                        <option value="nincsen">Nincsen Tünet</option>
+                                    </select>
+
+                                    {(symptom2 === 'tunet' || symptom2 === 'bizonytalan') && (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => setActiveBoxId(activeBoxId === 'box2' ? null : 'box2')}
+                                                className={`flex-1 py-2 px-3 rounded text-sm font-medium transition-colors ${activeBoxId === 'box2' ? 'bg-blue-600 text-white' : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'}`}
+                                            >
+                                                {activeBoxId === 'box2' ? 'Rajzolás...' : 'Rajzolás'}
+                                            </button>
+                                            {box2 && (
+                                                <button
+                                                    onClick={() => setBox2(null)}
+                                                    className="px-3 py-2 text-red-600 hover:bg-red-50 rounded text-sm"
+                                                >
+                                                    Törlés
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </div>
 
-                            {/* 2. Drawing Instruction */}
-                            {symptomType && (
-                                <div className={`p-4 rounded-lg text-base font-medium ${canDraw ? 'bg-blue-50 text-blue-900 border border-blue-100' : 'bg-gray-50 text-gray-600 border border-gray-100'} `}>
-                                    {symptomType === 'tunet' && "Rajzolja be a tünetet a képen (Kötelező)."}
-                                    {symptomType === 'bizonytalan' && "Jelölje a gyanús területet (Opcionális)."}
-                                    {symptomType === 'nincsen' && "Nincs teendő a képen."}
+                            {/* Section 2: Diagnosis */}
+                            <div>
+                                <h3 className="text-lg font-bold text-gray-900 mb-3 border-b pb-2">2. Diagnózis</h3>
+                                <div className="flex gap-4">
+                                    <button
+                                        onClick={() => setInitialDiagnosis('igen')}
+                                        className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                            ${initialDiagnosis === 'igen'
+                                                ? 'bg-blue-600 border-blue-600 text-white scale-[1.02]'
+                                                : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
+                                    >
+                                        IGEN
+                                    </button>
+                                    <button
+                                        onClick={() => setInitialDiagnosis('nem')}
+                                        className={`flex-1 py-6 px-4 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                            ${initialDiagnosis === 'nem'
+                                                ? 'bg-blue-600 border-blue-600 text-white scale-[1.02]'
+                                                : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
+                                    >
+                                        NEM
+                                    </button>
                                 </div>
-                            )}
-
-                            {/* 3. Diagnosis Decision */}
-                            {symptomType && (
-                                <div>
-                                    <label className="block font-semibold mb-3 text-gray-700 text-lg">2. Diagnózis</label>
-                                    <div className="flex gap-4">
-                                        <button
-                                            onClick={() => setInitialDiagnosis('igen')}
-                                            className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
-                                                ${initialDiagnosis === 'igen'
-                                                    ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
-                                                    : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
-                                        >
-                                            IGEN
-                                        </button>
-                                        <button
-                                            onClick={() => setInitialDiagnosis('nem')}
-                                            className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
-                                                ${initialDiagnosis === 'nem'
-                                                    ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
-                                                    : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
-                                        >
-                                            NEM
-                                        </button>
-                                    </div>
-                                </div>
-                            )}
+                            </div>
 
                             {/* Next Button */}
                             <button
                                 onClick={handleInitialSubmit}
-                                disabled={!initialDiagnosis || !symptomType || !isBoxValid()}
-                                className="w-full py-4 mt-4 bg-gray-900 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-black transition-all transform hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+                                disabled={!isValidSubmit()}
+                                className="w-full py-4 bg-gray-900 text-white text-lg font-bold rounded-xl shadow-lg hover:bg-black transition-all transform hover:scale-[1.01] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
                             >
                                 Értékelés →
                             </button>
                         </div>
                     )}
 
-                    {/* Step 2: Pre-Confidence (Hidden in sidebar, shown in Modal) */}
                     {step === 'pre-confidence' && (
-                        <div className="p-4 bg-blue-50 text-blue-800 rounded mb-4">
+                        <div className="p-4 bg-blue-50 text-blue-800 rounded font-medium">
                             Kérjük, értékelje a döntését a felugró ablakban.
                         </div>
                     )}
-
                 </div>
             </div>
         </div>

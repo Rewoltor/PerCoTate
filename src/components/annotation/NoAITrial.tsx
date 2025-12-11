@@ -4,9 +4,8 @@ import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
-import { BBoxTool } from '../common/BBoxTool'; // Import real tool
 import { getAIPrediction } from '../../utils/aiLookup';
-import type { TrialData, Box } from '../../types';
+import type { TrialData } from '../../types';
 
 interface NoAITrialProps {
     onComplete: () => void;
@@ -18,7 +17,6 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     const [loading, setLoading] = useState(true);
 
     // Annotation State
-    const [userBox, setUserBox] = useState<Box | null>(null);
     const [diagnosis, setDiagnosis] = useState<'igen' | 'nem' | null>(null);
     const [confidence, setConfidence] = useState<number | null>(null);
     const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
@@ -27,24 +25,21 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     const [startTime, setStartTime] = useState<number>(Date.now());
 
     // Computed
-    const canDraw = true; // Always allow drawing in this simplified flow
     const canSubmit = diagnosis && confidence; // Submit only depends on diagnosis and confidence
 
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
 
     // Initialize from User Context
-    // Initialize from User Context
     useEffect(() => {
         if (user) {
-            const completedCount = Object.keys(user.completedTrials || {}).length;
+            const isPhase2 = user.currentPhase === 'phase2';
+            const trialsMap = isPhase2 ? (user.completedTrialsPhase2 || {}) : (user.completedTrials || {});
+            const completedCount = Object.keys(trialsMap).length;
+
             if (completedCount >= TOTAL_TRIALS) {
                 onComplete();
                 return;
             }
-            // Fix: Only update if the remote count is GREATER than local.
-            // This prevents stale Firestore data (which might still be N) from overwriting
-            // our optimistic local state (N+1) after we clicked "Next".
-            // It also correctly handles the initial load (local=0, remote=N).
             if (completedCount > currentTrialIndex) {
                 setCurrentTrialIndex(completedCount);
             }
@@ -54,7 +49,8 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     // Handle Image Load - Dependent on index change
     useEffect(() => {
         if (!user) return;
-        const imgId = user.imageSequence[currentTrialIndex];
+        const sequence = user.currentPhase === 'phase2' ? (user.imageSequencePhase2 || user.imageSequence) : user.imageSequence;
+        const imgId = sequence[currentTrialIndex];
 
         if (imgId === undefined) return;
 
@@ -76,7 +72,6 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             .finally(() => {
                 setLoading(false);
                 // Reset form state here when new image loads
-                setUserBox(null);
                 setDiagnosis(null);
                 setConfidence(null);
                 setStartTime(Date.now());
@@ -86,17 +81,18 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     // Removed separate reset effect to avoid race conditions
     // State reset is now handled in the image load chain ensure synchronization
 
-    const handleBoxChange = (box: Box | null) => {
-        setUserBox(box);
-    };
-
     const handleNext = async () => {
         if (!user || !canSubmit) return;
 
         setSaving(true);
         const endTime = Date.now();
-        const imageId = user.imageSequence[currentTrialIndex];
-        const trialId = `trial_${currentTrialIndex + 1}`;
+        const isPhase2 = user.currentPhase === 'phase2';
+        const sequence = isPhase2 ? (user.imageSequencePhase2 || user.imageSequence) : user.imageSequence;
+        const imageId = sequence[currentTrialIndex];
+
+        // Prefix trial ID for Phase 2 to avoid overwriting Phase 1 data
+        const trialIdPrefix = isPhase2 ? 'p2_trial' : 'trial';
+        const trialId = `${trialIdPrefix}_${currentTrialIndex + 1}`;
 
         const trialData: TrialData = {
             trialId,
@@ -106,8 +102,6 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             diagnosis,
             confidence,
             aiShown: false,
-            // Add box data if present
-            ...(userBox ? { box: userBox } : {})
         };
 
         try {
@@ -115,9 +109,13 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             await setDoc(trialRef, trialData);
 
             const userRef = doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID);
-            await setDoc(userRef, {
-                completedTrials: { [trialId]: true }
-            }, { merge: true });
+
+            // Update the correct completion map
+            const updatePayload = isPhase2
+                ? { completedTrialsPhase2: { ...user.completedTrialsPhase2, [trialId]: true } }
+                : { completedTrials: { ...user.completedTrials, [trialId]: true } };
+
+            await setDoc(userRef, updatePayload, { merge: true });
 
             if (currentTrialIndex + 1 >= TOTAL_TRIALS) {
                 onComplete();
@@ -157,13 +155,13 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                                 <span className="text-lg font-medium animate-pulse">Kép betöltése...</span>
                             </div>
                         )}
-                        <div className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} w-full h-full`}>
+                        <div className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} w-full h-full flex items-center justify-center`}>
                             {currentImageUrl ? (
-                                <BBoxTool
+                                <img
                                     src={currentImageUrl}
-                                    enabled={canDraw}
-                                    onChange={handleBoxChange}
-                                    overlayBox={userBox}
+                                    alt="X-ray"
+                                    className="max-w-full max-h-full object-contain shadow-2xl"
+                                    draggable={false}
                                 />
                             ) : (
                                 !loading && <div className="text-white text-center">Hiba: A kép nem tölthető be.</div>
@@ -196,7 +194,6 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                                 <button
                                     onClick={() => {
                                         setDiagnosis('nem');
-                                        setUserBox(null); // Clear box if No is selected
                                     }}
                                     className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
                                         ${diagnosis === 'nem'

@@ -6,8 +6,9 @@ import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
 
 export const LoginPage: React.FC = () => {
-    const { login, loading, error, user } = useAuth();
+    const { authenticate, loading, error, user, adminUnlockUser } = useAuth();
     const navigate = useNavigate();
+    const [mode, setMode] = useState<'login' | 'register'>('login');
     const [name, setName] = useState('');
     const [pin, setPin] = useState(['', '', '', '']); // Array for 4 digits
     const [showPin, setShowPin] = useState(false);
@@ -46,8 +47,21 @@ export const LoginPage: React.FC = () => {
     // Auto-redirect if already logged in
     React.useEffect(() => {
         if (user) {
+            if (user.currentPhase === 'phase2_completed') {
+                navigate('/completion');
+                return;
+            }
+            if (user.currentPhase === 'phase1_completed' && user.phase1CompletedAt) {
+                // Check logical washout calc here or just send to completion which handles it
+                // Better to send to completion page to show status
+                navigate('/completion');
+                return;
+            }
             const path = `/${user.currentPhase}/group${user.treatmentGroup}/landing`;
+            console.log("[LoginPage] User found, redirecting to:", path, user);
             navigate(path);
+        } else {
+            console.log("[LoginPage] No user in context.");
         }
     }, [user, navigate]);
 
@@ -58,15 +72,61 @@ export const LoginPage: React.FC = () => {
             alert("Kérjük, adja meg a nevét és a 4 jegyű PIN kódját.");
             return;
         }
-        await login(name, pinString);
+        await authenticate(name, pinString, mode);
+    };
+
+    const handleUnlock = async () => {
+        if (!confirm("DEV: Biztosan átállítja a dátumot 31 nappal korábbira a teszteléshez?")) return;
+        const pinString = pin.join('');
+        const success = await adminUnlockUser(name, pinString);
+        if (success) {
+            alert("Sikeres módosítás! Most jelentkezzen be újra.");
+            window.location.reload();
+        }
     };
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <Card title="MRMC Study Login" className="w-full max-w-md">
+            <Card title="" className="w-full max-w-md pt-8">
+                {/* Custom Toggle Switch */}
+                <div className="flex justify-center mb-8 px-8">
+                    <div className="bg-gray-100 p-1 rounded-xl flex w-full relative">
+                        {/* Animated Pill Background */}
+                        <div
+                            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out ${mode === 'login' ? 'left-1' : 'left-[calc(50%+4px)]'}`}
+                        />
+
+                        <button
+                            type="button"
+                            onClick={() => setMode('login')}
+                            className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'login' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Bejelentkezés
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode('register')}
+                            className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'register' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                        >
+                            Regisztráció
+                        </button>
+                    </div>
+                </div>
+
+                <div className="px-1 text-center mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                        {mode === 'login' ? 'Üdvözöljük újra!' : 'Új Fiók Létrehozása'}
+                    </h2>
+                    <p className="text-gray-500 text-sm mt-1">
+                        {mode === 'login'
+                            ? 'Kérjük adja meg belépési adatait.'
+                            : 'Kérjük adja meg adatait a regisztrációhoz.'}
+                    </p>
+                </div>
+
                 <form onSubmit={handleSubmit} className="space-y-6">
                     {error && (
-                        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100">
+                        <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm font-medium border border-red-100 animate-in fade-in slide-in-from-top-2">
                             {error}
                         </div>
                     )}
@@ -124,8 +184,21 @@ export const LoginPage: React.FC = () => {
                         isLoading={loading}
                         disabled={!name || pin.join('').length !== 4}
                     >
-                        Belépés
+                        {mode === 'login' ? 'Belépés' : 'Regisztráció'}
                     </Button>
+
+                    {error && error.includes("Phase 1 complete") && (
+                        <div className="mt-4 pt-4 border-t border-gray-100">
+                            <Button
+                                type="button"
+                                variant="secondary"
+                                className="w-full text-amber-600 border-amber-200 hover:bg-amber-50"
+                                onClick={handleUnlock}
+                            >
+                                🔧 DEV: 30 nap átugrása
+                            </Button>
+                        </div>
+                    )}
 
                     <p className="text-center text-xs text-gray-400 mt-4">
                         Semmelweis Egyetem - PerCoTate Study

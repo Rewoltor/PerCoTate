@@ -1,11 +1,12 @@
 export type TreatmentGroup = '0' | '1';
-export type Phase = 'phase1' | 'phase2';
+export type Phase = 'phase1' | 'phase2' | 'phase1_completed' | 'phase2_completed';
 
 export interface Participant {
     userID: string;
     treatmentGroup: TreatmentGroup;
     currentPhase: Phase;
     imageSequence: number[]; // Array of Image IDs (1-50)
+    imageSequencePhase2?: number[]; // Array of Image IDs (1-50) for Phase 2
 
     // Timestamps
     phase1CompletedAt?: number; // Unix timestamp
@@ -13,6 +14,7 @@ export interface Participant {
 
     // Progress tracking within current phase
     completedTrials: { [trialId: string]: boolean };
+    completedTrialsPhase2?: { [trialId: string]: boolean };
 
     // Psychometrics
     demographics?: Demographics;

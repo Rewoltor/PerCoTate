@@ -7,26 +7,37 @@ export interface Box {
     height: number;
 }
 
+export interface ColoredBox {
+    id: string;
+    box: Box;
+    color: string;
+    label?: string;
+}
+
 interface BBoxToolProps {
     src: string;
-    onChange: (box: Box | null) => void;
-    overlayBox?: Box | null;
+    boxes: ColoredBox[];
+    activeBoxId: string | null;
+    onChange: (id: string, box: Box | null) => void;
     enabled?: boolean;
 }
 
 export const BBoxTool: React.FC<BBoxToolProps> = ({
     src,
+    boxes,
+    activeBoxId,
     onChange,
-    overlayBox,
     enabled = true,
 }) => {
     const imgRef = useRef<HTMLImageElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    // const containerRef = useRef<HTMLDivElement>(null);
 
     const [drawing, setDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
-    const [displayBox, setDisplayBox] = useState<Box | null>(null); // in displayed pixels
+
+    // We don't keep local display state for all boxes, we calculate on render/prop update
+    // But for the *currently drawing* box, we need immediate feedback.
+    const [currentDragBox, setCurrentDragBox] = useState<Box | null>(null);
 
     // Helper: Client -> Display Coords
     const clientToDisplay = (clientX: number, clientY: number) => {
@@ -43,6 +54,9 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         const img = imgRef.current;
         if (!img || !box) return null;
         const rect = img.getBoundingClientRect();
+        // Prevent division by zero
+        if (rect.width === 0 || rect.height === 0) return null;
+
         const scaleX = img.naturalWidth / rect.width;
         const scaleY = img.naturalHeight / rect.height;
         return {
@@ -58,6 +72,8 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         const img = imgRef.current;
         if (!img || !box) return null;
         const rect = img.getBoundingClientRect();
+        if (img.naturalWidth === 0 || img.naturalHeight === 0) return null;
+
         const scaleX = rect.width / img.naturalWidth;
         const scaleY = rect.height / img.naturalHeight;
         return {
@@ -68,12 +84,76 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         };
     };
 
+    // Draw everything
+    const draw = () => {
+        const canvas = canvasRef.current;
+        const img = imgRef.current;
+        if (!canvas || !img) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw existing boxes (from props)
+        boxes.forEach(b => {
+            // If we are currently redrawing this specific box, skip it in the static render
+            // (we draw the drag box instead)
+            if (drawing && activeBoxId === b.id) return;
+
+            const dBox = naturalToDisplay(b.box);
+            if (dBox) {
+                drawBox(ctx, dBox, b.color, b.label);
+            }
+        });
+
+        // Draw currently dragging box
+        if (drawing && currentDragBox && activeBoxId) {
+            const activeColor = boxes.find(b => b.id === activeBoxId)?.color || '#00FF00';
+            drawBox(ctx, currentDragBox, activeColor, "Rajzolás...");
+        }
+    };
+
+    const drawBox = (ctx: CanvasRenderingContext2D, box: Box, color: string, label?: string) => {
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]); // Solid line
+        ctx.strokeRect(box.x, box.y, box.width, box.height);
+
+        // Fill
+        // Parse hex to rgba for fill
+        ctx.fillStyle = hexToRgba(color, 0.2);
+        ctx.fillRect(box.x, box.y, box.width, box.height);
+
+        // Label
+        if (label) {
+            ctx.fillStyle = color;
+            ctx.font = "bold 12px sans-serif";
+            ctx.fillText(label, box.x, box.y - 5);
+        }
+    };
+
+    const hexToRgba = (hex: string, alpha: number) => {
+        // Very basic implementation
+        let c: any;
+        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+            c = hex.substring(1).split('');
+            if (c.length == 3) {
+                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
+            }
+            c = '0x' + c.join('');
+            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
+        }
+        return 'rgba(0,0,0,0.2)'; // Fallback
+    }
+
     // Resize Canvas
     const resizeCanvas = () => {
         const img = imgRef.current;
         const canvas = canvasRef.current;
         if (!img || !canvas) return;
         const rect = img.getBoundingClientRect();
+        if (rect.width === 0 || rect.height === 0) return;
+
         canvas.width = Math.round(rect.width);
         canvas.height = Math.round(rect.height);
         canvas.style.width = `${Math.round(rect.width)}px`;
@@ -86,20 +166,12 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         return () => window.removeEventListener('resize', resizeCanvas);
     }, []);
 
-    // Sync Overlay Box
+    // Redraw when boxes change
     useEffect(() => {
-        if (overlayBox) {
-            const d = naturalToDisplay(overlayBox);
-            if (d) setDisplayBox(d);
-        } else {
-            // Only reset if we are not currently drawing? 
-            // Logic check: if overlayBox becomes null, we clear display.
-            // User drawing overrides this usually.
-            // For now, simple sync.
-            // setDisplayBox(null); // Wait, this clears user work if prop updates?
-            // Usually dependent on how parent manages state.
-        }
-    }, [overlayBox]);
+        // Use timeout to ensure image might be laid out? 
+        // Actually requestAnimationFrame is better but basic effect is fine.
+        draw();
+    }, [boxes, src, currentDragBox, drawing]); // Dependencies
 
     // Handle Pointers
     const getClientFromEvent = (e: any) => {
@@ -110,17 +182,23 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
     };
 
     const handlePointerDown = (e: any) => {
-        if (!enabled) return;
+        if (!enabled || !activeBoxId) return;
         const c = getClientFromEvent(e);
         if (!c) return;
         const p = clientToDisplay(c.clientX, c.clientY);
         if (!p) return;
         setStartPoint({ x: p.x, y: p.y });
         setDrawing(true);
+        setCurrentDragBox(null);
+
+        // Prevent scrolling on touch
+        if (e.type === 'touchstart') {
+            // e.preventDefault(); // React synthetic events might complain, handled in style
+        }
     };
 
     const handlePointerMove = (e: any) => {
-        if (!enabled || !drawing || !startPoint) return;
+        if (!enabled || !drawing || !startPoint || !activeBoxId) return;
         const c = getClientFromEvent(e);
         if (!c) return;
         const p = clientToDisplay(c.clientX, c.clientY);
@@ -130,57 +208,29 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         const y = Math.min(startPoint.y, p.y);
         const w = Math.abs(p.x - startPoint.x);
         const h = Math.abs(p.y - startPoint.y);
-        setDisplayBox({ x, y, width: w, height: h });
-        draw();
+        setCurrentDragBox({ x, y, width: w, height: h });
+        // Draw is triggered by state set
     };
 
     const handlePointerUp = (_e: any) => {
-        if (!displayBox) {
-            setDrawing(false);
-            setStartPoint(null);
-            return;
-        }
-        const nat = displayToNatural(displayBox);
-        if (nat) onChange(nat);
+        if (!drawing) return;
         setDrawing(false);
         setStartPoint(null);
-    };
 
-    const clearBox = () => {
-        setDisplayBox(null);
-        onChange(null);
-        draw();
-    };
-
-    const draw = () => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        if (displayBox) {
-            ctx.strokeStyle = 'rgba(16,185,129,0.95)'; // Green
-            ctx.lineWidth = 2;
-            ctx.setLineDash([6, 4]);
-            ctx.strokeRect(displayBox.x, displayBox.y, displayBox.width, displayBox.height);
-            ctx.fillStyle = 'rgba(16,185,129,0.12)';
-            ctx.fillRect(displayBox.x, displayBox.y, displayBox.width, displayBox.height);
+        if (currentDragBox && activeBoxId) {
+            const nat = displayToNatural(currentDragBox);
+            if (nat) {
+                onChange(activeBoxId, nat);
+            }
         }
+        setCurrentDragBox(null);
     };
 
-    // Re-draw context on state change
-    useEffect(() => {
-        draw();
-    }, [displayBox]);
-
-    // Image load handler
     useEffect(() => {
         const img = imgRef.current;
         if (!img) return;
         const onLoad = () => resizeCanvas();
         img.addEventListener('load', onLoad);
-        // Force resize if already complete
         if (img.complete) resizeCanvas();
         return () => img.removeEventListener('load', onLoad);
     }, [src]);
@@ -200,31 +250,26 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
                     onPointerDown={handlePointerDown}
                     onPointerMove={handlePointerMove}
                     onPointerUp={handlePointerUp}
+                    onPointerLeave={handlePointerUp}
                     style={{
                         position: 'absolute',
                         left: 0,
                         top: 0,
                         width: '100%',
                         height: '100%',
-                        pointerEvents: enabled ? 'auto' : 'none',
+                        pointerEvents: (enabled && activeBoxId) ? 'auto' : 'none',
                         touchAction: 'none',
-                        cursor: enabled ? 'crosshair' : 'default',
+                        cursor: (enabled && activeBoxId) ? 'crosshair' : 'default',
                     }}
                 />
             </div>
 
-            {/* External controls - Absolutely positioned to prevent layout shift */}
-            {enabled && (
-                <div className="absolute bottom-6 left-0 right-0 text-center text-base font-medium text-gray-300 pointer-events-none">
-                    <div className="pointer-events-auto inline-block">
-                        {displayBox ? (
-                            <button onClick={clearBox} className="text-red-400 hover:text-red-300 transition-colors underline decoration-2 underline-offset-4">
-                                Törlés
-                            </button>
-                        ) : (
-                            <span className="opacity-80">Rajzolja be a dobozt a képen</span>
-                        )}
-                    </div>
+            {/* Hint */}
+            {enabled && activeBoxId && (
+                <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none">
+                    <span className="bg-black/50 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm">
+                        Rajzolás folyamatban ({activeBoxId === 'box1' ? 'Melléklelet 1' : 'Melléklelet 2'})
+                    </span>
                 </div>
             )}
         </div>

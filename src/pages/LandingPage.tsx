@@ -9,16 +9,11 @@ export const LandingPage: React.FC = () => {
     const { user } = useAuth();
     const navigate = useNavigate();
 
-    if (!user) return <div>Loading...</div>;
-
-    const { currentPhase, treatmentGroup } = user;
+    // Data check helpers (moved up)
+    const currentPhase = user?.currentPhase;
+    const treatmentGroup = user?.treatmentGroup;
     const isGroup0 = treatmentGroup === '0';
     const isPhase1 = currentPhase === 'phase1';
-
-    // Data check helpers
-    const hasDemographics = !!user.demographics;
-    const hasBig5 = !!user.big5;
-    const hasIQ = !!user.iq;
 
     // Check Annotation Completion Logic
     React.useEffect(() => {
@@ -30,7 +25,13 @@ export const LandingPage: React.FC = () => {
         if (completedCount >= TOTAL_TRIALS) {
             navigate('/completion');
         }
-    }, [user, isPhase1, navigate]);
+    }, [user, navigate]); // Removed isPhase1 from deps as it is derived from user
+
+    if (!user) return <div>Loading...</div>;
+
+    const hasDemographics = !!user.demographics;
+    const hasBig5 = !!user.big5;
+    const hasIQ = !!user.iq;
 
     // Determine Next Step Logic
     let nextPath = '';

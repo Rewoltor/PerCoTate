@@ -97,7 +97,7 @@ export const loadPredictions = async () => {
     }
 };
 
-export const getAIPrediction = async (index: number, _phaseFilter: string = 'baseline'): Promise<AIPrediction | null> => {
+export const getAIPrediction = async (index: number): Promise<AIPrediction | null> => {
     await loadPredictions();
 
     // index is 1-based from the flow (1..50)

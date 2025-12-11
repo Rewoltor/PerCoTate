@@ -1,10 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import type { Box } from '../../utils/math';
+import type { ColoredBox } from '../common/BBoxTool';
 
 interface AIFeedbackModalProps {
     imageSrc: string;
-    userBox: Box | null;
+    userBoxes: ColoredBox[];
     aiBox?: Box;
     aiPrediction: 'igen' | 'nem';
     aiConfidence: number;
@@ -15,12 +16,12 @@ interface AIFeedbackModalProps {
     onContinue: () => void;
 }
 
-// Consolidated Modal: Handles Feedback (Phase A) and Final Confidence (Phase A2)
+// Consolidated Modal: Handles Feedback (Phase A) and Final Confidence (Phase B)
 export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
     onFinalSubmit: (conf: number) => void;
 }> = ({
     imageSrc,
-    userBox,
+    userBoxes,
     aiBox,
     aiPrediction,
     aiConfidence,
@@ -65,7 +66,10 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
             };
 
             if (aiBox) drawBox(aiBox, 'rgba(255, 0, 0, 0.9)', 'AI');
-            if (userBox) drawBox(userBox, 'rgba(0, 0, 255, 0.9)', 'User');
+
+            userBoxes.forEach(b => {
+                drawBox(b.box, b.color, `Ön (${b.label})`);
+            });
         };
 
         useEffect(() => {
@@ -78,7 +82,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                 img.removeEventListener('load', drawOverlay);
                 window.removeEventListener('resize', drawOverlay);
             };
-        }, [userBox, aiBox]);
+        }, [userBoxes, aiBox]);
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">

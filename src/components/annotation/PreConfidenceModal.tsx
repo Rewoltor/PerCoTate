@@ -1,17 +1,19 @@
+
 import React, { useRef, useEffect } from 'react';
+import type { ColoredBox } from '../common/BBoxTool';
 import type { Box } from '../../utils/math';
 
 interface PreConfidenceModalProps {
     imageSrc: string;
-    userBox: Box | null;
-    symptomType: string;
+    userBoxes: ColoredBox[];
+    activeDiagnosis: 'igen' | 'nem';
     onConfidenceSelect: (conf: number) => void;
 }
 
 export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
     imageSrc,
-    userBox,
-    symptomType,
+    userBoxes,
+    activeDiagnosis,
     onConfidenceSelect,
 }) => {
     const imgRef = useRef<HTMLImageElement>(null);
@@ -42,7 +44,9 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
             ctx.fillText(label, (box.x * scaleX) + 5, (box.y * scaleY) + 20);
         };
 
-        if (userBox) drawBox(userBox, 'rgba(0, 0, 255, 0.9)', 'Ön (User)');
+        userBoxes.forEach(b => {
+            drawBox(b.box, b.color, `Ön (${b.label})`);
+        });
     };
 
     useEffect(() => {
@@ -55,7 +59,7 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
             img.removeEventListener('load', drawOverlay);
             window.removeEventListener('resize', drawOverlay);
         };
-    }, [userBox]);
+    }, [userBoxes]);
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -83,8 +87,8 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
                 <div className="w-1/3 p-8 flex flex-col justify-center bg-gray-50">
                     <h2 className="text-3xl font-bold mb-4 text-gray-800">Első Döntés Megerősítése</h2>
                     <p className="text-gray-600 mb-8 text-lg">
-                        Ön <strong className={symptomType === 'nincsen' ? 'text-red-600' : 'text-blue-600'}>
-                            {symptomType === 'nincsen' ? 'NEM' : 'IGEN'}
+                        Ön <strong className={activeDiagnosis === 'nem' ? 'text-green-600' : 'text-red-600'}>
+                            {activeDiagnosis.toUpperCase()}
                         </strong> diagnózist jelölt.
                     </p>
 

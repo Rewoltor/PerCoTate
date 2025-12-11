@@ -8,6 +8,8 @@ import { PhaseGuard } from './components/PhaseGuard';
 import { LoginPage } from './pages/LoginPage';
 import { LandingPage } from './pages/LandingPage';
 
+import { Phase2LandingPage } from './pages/Phase2LandingPage';
+
 // Components
 import { DemographicsForm } from './components/psychometrics/DemographicsForm';
 import { Big5Test } from './components/psychometrics/Big5Test';
@@ -17,6 +19,7 @@ import { NoAITrial } from './components/annotation/NoAITrial';
 import { AITrial } from './components/annotation/AITrial';
 
 import { FinalCompletion } from './pages/FinalCompletion';
+import { IntroPage } from './pages/IntroPage';
 
 // Wrappers to handle navigation on completion
 const StepWrapper = ({ component: Component, nextPath }: { component: React.FC<{ onComplete: () => void }>, nextPath: string }) => {
@@ -27,7 +30,7 @@ const StepWrapper = ({ component: Component, nextPath }: { component: React.FC<{
 const FinalStepWrapper = ({ component: Component }: { component: React.FC<{ onComplete: () => void }> }) => {
   const navigate = useNavigate();
   return <Component onComplete={() => {
-    navigate('/completion'); // Go to dedicated completion page
+    navigate('/completion', { state: { justFinished: true } }); // Go to dedicated completion page with flag
   }} />;
 };
 
@@ -67,17 +70,25 @@ const App: React.FC = () => {
 
             {/* Group 0 (was Control, now AI): Video -> AI */}
             <Route path="group0">
-              <Route path="landing" element={<LandingPage />} />
+              <Route path="landing" element={<Phase2LandingPage />} />
+              <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Oktatóvideó" description="A következő lépésben egy rövid videót fog látni, amely bemutatja az AI asszisztens használatát." buttonText="Videó Indítása" />} nextPath="video" />} />
               <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.2.mp4" />} nextPath="annotation" />} />
               <Route path="annotation" element={<FinalStepWrapper component={AITrial} />} />
             </Route>
 
             {/* Group 1 (was AI, now Control + Psych): Big5 -> IQ -> Video -> NoAI */}
             <Route path="group1">
-              <Route path="landing" element={<LandingPage />} />
-              <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="iq" />} />
-              <Route path="iq" element={<StepWrapper component={IQTest} nextPath="video" />} />
+              <Route path="landing" element={<Phase2LandingPage />} />
+
+              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description="Az alábbiakban állításokat fog olvasni. Kérjük, jelölje meg, mennyire jellemzőek Önre." buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
+              <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="intro-iq" />} />
+
+              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészítenie." buttonText="Teszt Indítása" />} nextPath="iq" />} />
+              <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
+
+              <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Felkészülés a 2. Fázisra" description="Ebben a fázisban önállóan fog dolgozni. Kérjük, tekintse meg az emlékeztető videót." buttonText="Videó Megtekintése" />} nextPath="video" />} />
               <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video1.2.mp4" />} nextPath="annotation" />} />
+
               <Route path="annotation" element={<FinalStepWrapper component={NoAITrial} />} />
             </Route>
 
