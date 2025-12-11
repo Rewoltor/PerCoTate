@@ -60,7 +60,10 @@ export interface Box {
 export interface Demographics {
     age: number;
     gender: string;
-    experienceLevel: string; // e.g. medical student year
+    school: string; // Iskolai végzettség
+    residence: string; // Lakhely
+    healthcareQualification: string; // Egészségügyi végzettség
+    experienceLevel?: string; // Keeping for backward compatibility
 }
 
 export interface Big5Response {

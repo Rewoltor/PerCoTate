@@ -15,21 +15,26 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
     const { user } = useAuth();
     const [formData, setFormData] = useState<Partial<Demographics>>({
         gender: '',
-        experienceLevel: ''
+        school: '',
+        residence: '',
+        healthcareQualification: '',
     });
     const [ageInput, setAgeInput] = useState('');
     const [submitting, setSubmitting] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !formData.gender || !formData.experienceLevel || !ageInput) return;
+        if (!user || !formData.gender || !formData.school || !formData.residence || !formData.healthcareQualification || !ageInput) return;
 
         setSubmitting(true);
         try {
             const demographics: Demographics = {
                 age: parseInt(ageInput, 10),
                 gender: formData.gender!,
-                experienceLevel: formData.experienceLevel!
+                school: formData.school!,
+                residence: formData.residence!,
+                healthcareQualification: formData.healthcareQualification!,
+                experienceLevel: formData.healthcareQualification // duplicate for compat
             };
 
             await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID), {
@@ -50,13 +55,15 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
             <Card title="Demográfiai Adatok" className="max-w-lg w-full">
                 <form onSubmit={handleSubmit} className="space-y-6">
 
+                    {/* Age */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Életkor</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Kor</label>
                         <input
                             type="number"
                             value={ageInput}
                             onChange={(e) => setAgeInput(e.target.value)}
                             className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg"
+                            placeholder="pl. 24"
                             required
                             min="18"
                             max="99"
@@ -64,6 +71,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         />
                     </div>
 
+                    {/* Gender */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">Nem</label>
                         <select
@@ -80,21 +88,57 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         </select>
                     </div>
 
+                    {/* School - New Dropdown */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Tapasztalat</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Iskolai végzettség vagy amibe jársz</label>
                         <select
-                            value={formData.experienceLevel}
-                            onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })}
+                            value={formData.school}
+                            onChange={(e) => setFormData({ ...formData, school: e.target.value })}
                             className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
                             required
                             disabled={submitting}
                         >
                             <option value="">-- Válasszon --</option>
+                            <option value="primary">Általános iskola</option>
+                            <option value="secondary">Középiskola</option>
+                            <option value="university">Egyetem</option>
+                        </select>
+                    </div>
+
+                    {/* Residence - New Field */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Lakhely</label>
+                        <select
+                            value={formData.residence}
+                            onChange={(e) => setFormData({ ...formData, residence: e.target.value })}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            required
+                            disabled={submitting}
+                        >
+                            <option value="">-- Válasszon --</option>
+                            <option value="budapest">Budapest</option>
+                            <option value="city">Város</option>
+                            <option value="village">Falu</option>
+                        </select>
+                    </div>
+
+                    {/* Healthcare Qualification - Updated Order */}
+                    <div>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Egészségügyi Végzettség</label>
+                        <select
+                            value={formData.healthcareQualification}
+                            onChange={(e) => setFormData({ ...formData, healthcareQualification: e.target.value })}
+                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            required
+                            disabled={submitting}
+                        >
+                            <option value="">-- Válasszon --</option>
+                            <option value="none">Nincsen semmilyen</option>
                             <option value="student_1-3">Orvostanhallgató (1-3. év)</option>
                             <option value="student_4-6">Orvostanhallgató (4-6. év)</option>
                             <option value="resident">Rezidens</option>
                             <option value="specialist">Szakorvos</option>
-                            <option value="other">Egyéb eü. dolgozó</option>
+                            <option value="other">Egyéb</option>
                         </select>
                     </div>
 

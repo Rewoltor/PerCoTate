@@ -1,4 +1,4 @@
-import { Eye } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import React, { useState, useRef } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -146,8 +146,19 @@ export const LoginPage: React.FC = () => {
 
 
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-3">PIN Kód (4 számjegy)</label>
-                        <div className="flex items-center gap-3 justify-start">
+                        <div className="flex justify-between items-center mb-4">
+                            <label className="text-sm font-bold text-gray-700">PIN Kód (4 számjegy)</label>
+                            <button
+                                type="button"
+                                onClick={() => setShowPin(!showPin)}
+                                className="text-gray-400 hover:text-gray-600 transition-colors flex items-center gap-1 text-xs font-medium"
+                            >
+                                {showPin ? <EyeOff size={16} /> : <Eye size={16} />}
+                                {showPin ? 'Elrejtés' : 'Megjelenítés'}
+                            </button>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-4">
                             {[0, 1, 2, 3].map((i) => (
                                 <input
                                     key={i}
@@ -159,22 +170,11 @@ export const LoginPage: React.FC = () => {
                                     onChange={(e) => handlePinChange(i, e.target.value)}
                                     onKeyDown={(e) => handleKeyDown(i, e)}
                                     onPaste={handlePaste}
-                                    className="w-14 h-16 rounded-xl border-2 border-gray-200 text-center text-2xl font-bold focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition-all shadow-sm bg-white"
+                                    className="w-16 h-16 rounded-2xl border-2 border-gray-100 text-center text-3xl font-bold text-gray-800 
+                                             focus:border-blue-500 focus:ring-4 focus:ring-blue-100/50 focus:scale-105
+                                             outline-none transition-all duration-200 shadow-sm bg-white hover:border-gray-300"
                                 />
                             ))}
-
-                            <button
-                                type="button"
-                                onMouseDown={() => setShowPin(true)}
-                                onMouseUp={() => setShowPin(false)}
-                                onMouseLeave={() => setShowPin(false)}
-                                onTouchStart={() => setShowPin(true)}
-                                onTouchEnd={() => setShowPin(false)}
-                                className="w-14 h-16 flex items-center justify-center rounded-xl bg-gray-100 text-gray-500 hover:bg-gray-200 hover:text-gray-700 transition-colors active:scale-95 flex-shrink-0 ml-1"
-                                title="Kód megjelenítése (tartsa lenyomva)"
-                            >
-                                <Eye size={22} />
-                            </button>
                         </div>
                     </div>
 

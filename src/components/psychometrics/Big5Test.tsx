@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
@@ -28,10 +28,16 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
     const [responses, setResponses] = useState<Big5Response>({});
     const [currentPage, setCurrentPage] = useState(0);
     const [submitting, setSubmitting] = useState(false);
+    const [showErrors, setShowErrors] = useState(false);
 
     const totalPages = Math.ceil(QUESTIONS.length / ITEMS_PER_PAGE);
     const startIndex = currentPage * ITEMS_PER_PAGE;
     const currentQuestions = QUESTIONS.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+    // Reset error state when page changes
+    useEffect(() => {
+        setShowErrors(false);
+    }, [currentPage]);
 
     const handleResponse = (qIndex: number, value: number) => {
         setResponses(prev => ({
@@ -40,15 +46,29 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
         }));
     };
 
-    const isPageComplete = () => {
+    const getUnansweredQuestions = () => {
+        const missing = [];
         for (let i = 0; i < currentQuestions.length; i++) {
             const globalIndex = startIndex + i;
-            if (!responses[`q_${globalIndex}`]) return false;
+            if (!responses[`q_${globalIndex}`]) {
+                missing.push(globalIndex);
+            }
         }
-        return true;
+        return missing;
     };
 
     const handleNext = () => {
+        const missing = getUnansweredQuestions();
+        if (missing.length > 0) {
+            setShowErrors(true);
+            // Scroll to the first missing question
+            const firstMissingElement = document.getElementById(`question-${missing[0]}`);
+            if (firstMissingElement) {
+                firstMissingElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+        }
+
         if (currentPage < totalPages - 1) {
             setCurrentPage(prev => prev + 1);
             window.scrollTo(0, 0);
@@ -84,11 +104,29 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
                     {currentQuestions.map((q, i) => {
                         const globalIndex = startIndex + i;
                         const val = responses[`q_${globalIndex}`];
-                        return (
-                            <div key={globalIndex} className="border-b border-gray-100 pb-6 last:border-0">
-                                <p className="font-bold text-lg text-gray-800 mb-4">{globalIndex + 1}. {q}</p>
+                        const isMissing = showErrors && !val;
 
-                                <div className="flex flex-col sm:flex-row justify-between items-center bg-gray-50 p-4 rounded-xl gap-4">
+                        return (
+                            <div
+                                id={`question-${globalIndex}`}
+                                key={globalIndex}
+                                className={`
+                                    border-b pb-6 last:border-0 transition-colors p-4 rounded-xl
+                                    ${isMissing ? 'bg-red-50 border-red-100' : 'border-gray-100'}
+                                `}
+                            >
+                                <div className="flex justify-between items-start mb-4">
+                                    <p className={`font-bold text-lg ${isMissing ? 'text-red-700' : 'text-gray-800'}`}>
+                                        {globalIndex + 1}. {q}
+                                    </p>
+                                    {isMissing && (
+                                        <span className="text-red-600 text-xs font-bold uppercase bg-red-100 px-2 py-1 rounded">
+                                            Kötelező
+                                        </span>
+                                    )}
+                                </div>
+
+                                <div className={`flex flex-col sm:flex-row justify-between items-center bg-gray-50 p-4 rounded-xl gap-4 ${isMissing ? 'ring-2 ring-red-200' : ''}`}>
                                     <span className="text-xs font-bold text-gray-400 uppercase tracking-wide">Egyáltalán nem</span>
 
                                     <div className="flex gap-2 sm:gap-4">
@@ -99,7 +137,9 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
                                                 className={`w-12 h-12 rounded-lg font-bold text-lg transition-all transform hover:scale-105 duration-200 shadow-sm
                                                     ${val === rating
                                                         ? 'bg-blue-600 text-white ring-2 ring-blue-600 ring-offset-2'
-                                                        : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-400 hover:bg-blue-50'
+                                                        : isMissing
+                                                            ? 'bg-white text-gray-600 border-2 border-red-300 hover:border-red-400 hover:bg-red-50'
+                                                            : 'bg-white text-gray-600 border border-gray-200 hover:border-blue-400 hover:bg-blue-50'
                                                     }`}
                                             >
                                                 {rating}
@@ -118,7 +158,6 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
                     <span className="text-gray-400 font-medium">Oldal {currentPage + 1} / {totalPages}</span>
                     <Button
                         onClick={handleNext}
-                        disabled={!isPageComplete() || submitting}
                         isLoading={submitting}
                         className="px-8"
                     >
