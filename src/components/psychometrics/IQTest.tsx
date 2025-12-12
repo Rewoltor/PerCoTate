@@ -126,7 +126,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
             <Card className="max-w-4xl w-full">
                 {/* Header */}
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900">Logika Teszt (Raven)</h2>
+                    <h2 className="text-2xl font-bold text-gray-900">Logika Teszt</h2>
                     <div className={`font-mono font-bold text-xl px-4 py-2 rounded-lg bg-gray-50 ${timeLeft < 60 ? 'text-red-500 bg-red-50' : 'text-gray-700'}`}>
                         {formatTime(timeLeft)}
                     </div>

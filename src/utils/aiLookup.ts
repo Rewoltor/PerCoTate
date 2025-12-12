@@ -17,53 +17,39 @@ let isLoaded = false;
 // Helper to parse CSV line
 const parseCSVLine = (line: string): AIPrediction | null => {
     const parts = line.split(',');
-    if (parts.length < 19) return null;
+    if (parts.length < 18) return null; // Ensure we have enough columns
 
-    // CSV Columns (0-indexed based on header):
-    // 0: image, 1: phase, 2: image_name, ...
-    // 4: ground_truth_binary (0 or 1), 6: probability, 
-    // 8: overlay, 13: bbox_xmin_norm, 14: bbox_ymin_norm, 15: bbox_xmax_norm, 16: bbox_ymax_norm
+    // NEW CSV Columns (header based):
+    // 0: image (e.g. "1.png")
+    // 7: probability (e.g. 0.5289)
+    // 8: prediction (0 or 1)
+    // 10: bbox_xmin (pixels)
+    // 11: bbox_ymin (pixels)
+    // 12: bbox_xmax (pixels)
+    // 13: bbox_ymax (pixels)
 
-    const imageId = parts[0];
-    const phase = parts[1];
-    // const imageName = parts[2];
-    const gtBinary = parseInt(parts[4]);
-    const probability = parseFloat(parts[6]);
-    // const overlay = parts[8]; // Unused
+    const imageId = parts[0]; // "1.png"
+    const probability = parseFloat(parts[7]);
+    const predictionBin = parseInt(parts[8]);
 
-    // BBox (normalized)
-    const xmin = parseFloat(parts[13]);
-    const ymin = parseFloat(parts[14]);
-    const xmax = parseFloat(parts[15]);
-    const ymax = parseFloat(parts[16]);
+    // BBox (pixels)
+    const xmin = parseFloat(parts[10]);
+    const ymin = parseFloat(parts[11]);
+    const xmax = parseFloat(parts[12]);
+    const ymax = parseFloat(parts[13]);
 
-    // Check if box exists (validity check, e.g. if area is 0 or all 0, implies no box?)
-    // CSV snippet shows 0,0,0,0 for no-box entries (row 2)
-    const hasBox = xmax > 0 || ymax > 0;
+    // Check if box exists (validity check).
+    const hasBox = (xmax > 0 || ymax > 0) && (xmax > xmin) && (ymax > ymin);
 
-    // Extract pure filename from path (e.g. "dataset/test/0/9545822R.png" -> "9545822R.png")
-    // const filename = imageName.split('/').pop() || imageName;
-
-    // UPDATED LOGIC (USER REQUEST 701): 
-    // The user states: "the images inside the ifle are named the same as the image variable in the AI_predictions.csv file"
-    // The 'image' column (imageId variable here) contains "1.png", "2.png", etc.
-    // The files in public/dataset/no_map are indeed "1.png", "2.png".
-    // So we should ignore the deep path in column 2 (imageName) and use column 0 (imageId).
-
-    const filename = imageId; // "1.png"
-
-    // Construct new paths based on "dataset/no_map" (plain) and "dataset/map" (heatmap)
-    const plainImagePath = `/dataset/no_map/${filename}`;
-
-    // UPDATED LOGIC (User Request): Use the same filename but in the 'map' folder.
-    // Ignore the 'overlay' column from CSV for now as it points to invalid paths.
-    const finalHeatmapPath = `/dataset/map/${filename}`;
+    // Construct paths
+    const plainImagePath = `/dataset/no_map/${imageId}`;
+    const finalHeatmapPath = `/dataset/map/${imageId}`;
 
     return {
-        id: `${phase}_${imageId}`, // Composite key
-        imageName: plainImagePath, // UPDATED PATH: now /dataset/no_map/1.png
-        phase: phase,
-        diagnosis: gtBinary === 1 ? 'igen' : 'nem', // Or should this be the prediction? CSV has 'prediction' at col 7
+        id: imageId,
+        imageName: plainImagePath,
+        phase: 'phase1',
+        diagnosis: predictionBin === 1 ? 'igen' : 'nem',
         confidence: probability,
         box: hasBox ? {
             x: xmin,
@@ -79,7 +65,7 @@ export const loadPredictions = async () => {
     if (isLoaded) return;
 
     try {
-        const response = await fetch('/data/AI_predictions.csv');
+        const response = await fetch('/dataset/predictions.csv');
         const text = await response.text();
         const lines = text.split('\n');
 
@@ -105,10 +91,7 @@ export const getAIPrediction = async (index: number): Promise<AIPrediction | nul
     const targetId = `${index}.png`;
 
     // Find matching entry
-    // UPDATED LOGIC: Search by image filename part (e.g. "19.png") regardless of phase prefix.
-    // The CSV assigns phases (baseline, experiment, etc.) to specific ranges, but our app randomizes 1-50 access.
-    // We just need the metadata for that ID.
-    const match = cachedPredictions.find(p => p.id.endsWith(`_${targetId}`));
+    const match = cachedPredictions.find(p => p.id === targetId);
 
     console.log(`[aiLookup] Looking for Index: ${index} (TargetID: ${targetId}). Found: ${!!match}`);
 

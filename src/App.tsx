@@ -58,7 +58,7 @@ const App: React.FC = () => {
               <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
 
               <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Oktatóvideó" description="A következő lépésben egy rövid videót fog látni, amely bemutatja a feladatot." buttonText="Videó Indítása" />} nextPath="video" />} />
-              <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.1.mp4" saveProgressKey="phase1VideoWatched" />} nextPath="intro-annotation" />} />
+              <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.1.mp4" saveProgressKey="phase1VideoWatched" />} nextPath="landing" />} />
 
               <Route path="intro-annotation" element={<StepWrapper component={(props) => <IntroPage {...props} title="Gyakorlás és Annotáció" description="Most következik a képek annotálása. Kérjük, alkalmazza a videóban látottakat." buttonText="Annotáció Indítása" />} nextPath="annotation" />} />
               <Route path="annotation" element={<FinalStepWrapper component={NoAITrial} />} />

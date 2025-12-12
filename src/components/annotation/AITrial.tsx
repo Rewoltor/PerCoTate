@@ -271,8 +271,13 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                 {/* Right: Controls Panel */}
                 <div className="w-[400px] bg-white border-l p-6 flex flex-col gap-8 overflow-y-auto">
                     <div>
-                        <h2 className="text-xl font-bold mb-1">{currentTrialIndex + 1}. Eset / {TOTAL_TRIALS}</h2>
+                        <h2 className="text-xl font-bold mb-1">Eset: {currentTrialIndex + 1} / {TOTAL_TRIALS}</h2>
                         <p className="text-gray-500 text-sm">AI Asszisztenssel</p>
+                        {CONFIG.IS_DEBUG_MODE && (
+                            <p className="text-xs text-red-500 font-mono mt-1 break-all">
+                                [DEBUG] Image: {aiData.imageName}
+                            </p>
+                        )}
                     </div>
 
                     {step === 'initial' && (
@@ -285,17 +290,20 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                 {/* Finding 1 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="font-semibold text-gray-700">1. Terület (Zöld)</label>
+                                        <label className="font-semibold text-gray-700">1. Csont sarkantyú (Osteofiták)</label>
                                         <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
                                     </div>
 
                                     <select
                                         value={symptom1}
                                         onChange={(e) => {
-                                            setSymptom1(e.target.value);
-                                            if (e.target.value === 'nincsen') {
+                                            const val = e.target.value;
+                                            setSymptom1(val);
+                                            if (val === 'nincsen') {
                                                 setBox1(null);
                                                 if (activeBoxId === 'box1') setActiveBoxId(null);
+                                            } else if (val === 'tunet') {
+                                                setActiveBoxId('box1');
                                             }
                                         }}
                                         className="w-full p-2 border rounded mb-3 bg-white"
@@ -329,17 +337,20 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                 {/* Finding 2 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="font-semibold text-gray-700">2. Terület (Kék)</label>
+                                        <label className="font-semibold text-gray-700">2. Ízületi rés beszűkülés</label>
                                         <div className="h-3 w-3 rounded-full bg-blue-500"></div>
                                     </div>
 
                                     <select
                                         value={symptom2}
                                         onChange={(e) => {
-                                            setSymptom2(e.target.value);
-                                            if (e.target.value === 'nincsen') {
+                                            const val = e.target.value;
+                                            setSymptom2(val);
+                                            if (val === 'nincsen') {
                                                 setBox2(null);
                                                 if (activeBoxId === 'box2') setActiveBoxId(null);
+                                            } else if (val === 'tunet') {
+                                                setActiveBoxId('box2');
                                             }
                                         }}
                                         className="w-full p-2 border rounded mb-3 bg-white"

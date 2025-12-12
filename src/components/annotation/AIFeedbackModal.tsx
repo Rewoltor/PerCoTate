@@ -56,16 +56,37 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                 const scaleX = img.clientWidth / img.naturalWidth;
                 const scaleY = img.clientHeight / img.naturalHeight;
 
+                const bx = box.x * scaleX;
+                const by = box.y * scaleY;
+                const bw = box.width * scaleX;
+                const bh = box.height * scaleY;
+
                 ctx.strokeStyle = color;
                 ctx.lineWidth = 3;
-                ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+                ctx.strokeRect(bx, by, bw, bh);
 
-                ctx.fillStyle = color;
+                // Draw Label Outside (Above)
                 ctx.font = 'bold 14px sans-serif';
-                ctx.fillText(label, (box.x * scaleX) + 5, (box.y * scaleY) + 20);
+                const textMetrics = ctx.measureText(label);
+                const textHeight = 16;
+                const padding = 4;
+
+                // Position text above box, unless it's too high up, then below? 
+                // Defaulting to above-left aligned
+                let ly = by - textHeight - padding;
+                if (ly < 0) ly = by + bh + padding; // Flip to bottom if out of bounds
+
+                // Label Background
+                ctx.fillStyle = color;
+                ctx.fillRect(bx, ly, textMetrics.width + (padding * 2), textHeight + padding);
+
+                // Label Text
+                ctx.fillStyle = 'white';
+                ctx.fillText(label, bx + padding, ly + textHeight - 2);
             };
 
-            if (aiBox) drawBox(aiBox, 'rgba(255, 0, 0, 0.9)', 'AI');
+            // Only draw AI box if Heatmap is NOT shown
+            if (aiBox && !showHeatmap) drawBox(aiBox, 'rgba(255, 0, 0, 0.9)', 'AI');
 
             userBoxes.forEach(b => {
                 drawBox(b.box, b.color, `Ön (${b.label})`);

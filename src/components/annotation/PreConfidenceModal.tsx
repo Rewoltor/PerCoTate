@@ -35,13 +35,31 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
             const scaleX = img.clientWidth / img.naturalWidth;
             const scaleY = img.clientHeight / img.naturalHeight;
 
+            const bx = box.x * scaleX;
+            const by = box.y * scaleY;
+            const bw = box.width * scaleX;
+            const bh = box.height * scaleY;
+
             ctx.strokeStyle = color;
             ctx.lineWidth = 3;
-            ctx.strokeRect(box.x * scaleX, box.y * scaleY, box.width * scaleX, box.height * scaleY);
+            ctx.strokeRect(bx, by, bw, bh);
 
-            ctx.fillStyle = color;
+            // Draw Label Outside (Above)
             ctx.font = 'bold 14px sans-serif';
-            ctx.fillText(label, (box.x * scaleX) + 5, (box.y * scaleY) + 20);
+            const textMetrics = ctx.measureText(label);
+            const textHeight = 16;
+            const padding = 4;
+
+            let ly = by - textHeight - padding;
+            if (ly < 0) ly = by + bh + padding;
+
+            // Label Background
+            ctx.fillStyle = color;
+            ctx.fillRect(bx, ly, textMetrics.width + (padding * 2), textHeight + padding);
+
+            // Label Text
+            ctx.fillStyle = 'white';
+            ctx.fillText(label, bx + padding, ly + textHeight - 2);
         };
 
         userBoxes.forEach(b => {
