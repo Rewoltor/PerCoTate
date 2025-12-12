@@ -6,12 +6,15 @@ import { CONFIG } from '../config';
 import { generateUserID } from '../utils/idGenerator';
 import type { Participant, TreatmentGroup } from '../types';
 
+// ... (existing imports)
+
 interface AuthContextType {
     user: Participant | null;
     loading: boolean;
     error: string | null;
     authenticate: (name: string, pin: string, mode: 'login' | 'register') => Promise<void>;
     logout: () => void;
+    refreshUser: () => Promise<void>;
     markPhase1Complete: () => Promise<void>;
     markPhase2Complete: () => Promise<void>;
     debugSkipWashout: () => Promise<void>;
@@ -195,6 +198,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
     };
 
+    const refreshUser = async () => {
+        if (!user) return;
+        try {
+            console.log("[Auth] Refreshing user data...");
+            const userRef = doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID);
+            const userSnap = await getDoc(userRef);
+            if (userSnap.exists()) {
+                const newData = userSnap.data() as Participant;
+                setUser(newData);
+                console.log("[Auth] User data refreshed.");
+            }
+        } catch (e) {
+            console.error("Failed to refresh user:", e);
+        }
+    };
+
     const markPhase1Complete = async () => {
         if (!user) return;
         try {
@@ -302,7 +321,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     return (
-        <AuthContext.Provider value={{ user, loading, error, authenticate, logout, markPhase1Complete, markPhase2Complete, debugSkipWashout, adminUnlockUser }}>
+        <AuthContext.Provider value={{ user, loading, error, authenticate, logout, refreshUser, markPhase1Complete, markPhase2Complete, debugSkipWashout, adminUnlockUser }}>
             {!loading && children}
         </AuthContext.Provider>
     );
@@ -315,3 +334,4 @@ export const useAuth = () => {
     }
     return context;
 };
+

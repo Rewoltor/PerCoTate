@@ -23,7 +23,7 @@ const IQ_QUESTIONS = [
 const TIME_LIMIT_SECONDS = 10 * 60; // 10 minutes global limit
 
 export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [currentQuestion, setCurrentQuestion] = useState(0);
     const [answers, setAnswers] = useState<{ [key: number]: string }>({});
     const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
@@ -80,6 +80,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                 iq: iqData
             }, { merge: true });
 
+            await refreshUser();
             onComplete();
         } catch (e) {
             console.error(e);

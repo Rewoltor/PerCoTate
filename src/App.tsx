@@ -45,13 +45,22 @@ const App: React.FC = () => {
           {/* Phase 1 Routes */}
           <Route path="/phase1" element={<PrivateRoute><PhaseGuard requiredPhase="phase1"><Outlet /></PhaseGuard></PrivateRoute>}>
 
-            {/* Group 0: Demo -> Big5 -> IQ -> Video -> NoAI */}
+            {/* Group 0: Demo -> IntroBig5 -> Big5 -> IntroIQ -> IQ -> IntroVideo -> Video -> IntroAnnotation -> Annotation */}
             <Route path="group0">
               <Route path="landing" element={<LandingPage />} />
-              <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="big5" />} />
-              <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="iq" />} />
-              <Route path="iq" element={<StepWrapper component={IQTest} nextPath="video" />} />
-              <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.1.mp4" />} nextPath="annotation" />} />
+
+              <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="intro-big5" />} />
+
+              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description="Az alábbiakban állításokat fog olvasni. Kérjük, jelölje meg, mennyire jellemzőek Önre." buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
+              <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="intro-iq" />} />
+
+              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészítenie." buttonText="Teszt Indítása" />} nextPath="iq" />} />
+              <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
+
+              <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Oktatóvideó" description="A következő lépésben egy rövid videót fog látni, amely bemutatja a feladatot." buttonText="Videó Indítása" />} nextPath="video" />} />
+              <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.1.mp4" saveProgressKey="phase1VideoWatched" />} nextPath="intro-annotation" />} />
+
+              <Route path="intro-annotation" element={<StepWrapper component={(props) => <IntroPage {...props} title="Gyakorlás és Annotáció" description="Most következik a képek annotálása. Kérjük, alkalmazza a videóban látottakat." buttonText="Annotáció Indítása" />} nextPath="annotation" />} />
               <Route path="annotation" element={<FinalStepWrapper component={NoAITrial} />} />
             </Route>
 

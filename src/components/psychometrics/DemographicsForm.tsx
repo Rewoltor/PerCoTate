@@ -11,8 +11,11 @@ interface DemographicsFormProps {
     onComplete: () => void;
 }
 
+// ... imports
+// ... interface
+
 export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }) => {
-    const { user } = useAuth();
+    const { user, refreshUser } = useAuth();
     const [formData, setFormData] = useState<Partial<Demographics>>({
         gender: '',
         school: '',
@@ -41,6 +44,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                 demographics
             }, { merge: true });
 
+            await refreshUser();
             onComplete();
         } catch (err) {
             console.error("Error saving demographics:", err);
@@ -49,6 +53,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
             setSubmitting(false);
         }
     };
+    // ... rest of component
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

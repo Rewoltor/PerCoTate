@@ -24,8 +24,10 @@ const QUESTIONS = [
 const ITEMS_PER_PAGE = 10;
 
 export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
-    const { user } = useAuth();
-    const [responses, setResponses] = useState<Big5Response>({});
+    const { user, refreshUser } = useAuth();
+    const [responses, setResponses] = useState<Big5Response>({}); // ... rest of state
+
+    // ... (lines 29-79 unchanged)
     const [currentPage, setCurrentPage] = useState(0);
     const [submitting, setSubmitting] = useState(false);
     const [showErrors, setShowErrors] = useState(false);
@@ -84,6 +86,7 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
             await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID), {
                 big5: responses
             }, { merge: true });
+            await refreshUser();
             onComplete();
         } catch (e) {
             console.error(e);

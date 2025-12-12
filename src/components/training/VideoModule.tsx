@@ -1,14 +1,21 @@
 import React, { useState, useRef } from 'react';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from '../../lib/firebase';
+import { CONFIG } from '../../config';
 
 interface VideoModuleProps {
     onComplete: () => void;
     videoSrc?: string; // Optional custom URL
+    saveProgressKey?: string; // Key to set to true in user doc
 }
 
-export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc }) => {
+export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc, saveProgressKey }) => {
+    const { user, refreshUser } = useAuth();
     const [watched, setWatched] = useState(false);
+    const [saving, setSaving] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     // Hardcoded demo video logic if no URL
@@ -17,6 +24,23 @@ export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc }
 
     const handleEnded = () => {
         setWatched(true);
+    };
+
+    const handleComplete = async () => {
+        if (saveProgressKey && user) {
+            setSaving(true);
+            try {
+                await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID), {
+                    [saveProgressKey]: true
+                }, { merge: true });
+                await refreshUser();
+            } catch (err) {
+                console.error("Error saving video progress:", err);
+            } finally {
+                setSaving(false);
+            }
+        }
+        onComplete();
     };
 
     return (
@@ -44,8 +68,9 @@ export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc }
 
                 <div className="flex justify-center">
                     <Button
-                        onClick={onComplete}
-                        disabled={!watched}
+                        onClick={handleComplete}
+                        disabled={!watched || saving}
+                        isLoading={saving}
                         className="px-12 py-4 text-xl shadow-xl shadow-blue-200"
                     >
                         Tovább a Gyakorlásra →

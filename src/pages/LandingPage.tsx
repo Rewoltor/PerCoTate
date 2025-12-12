@@ -40,18 +40,23 @@ export const LandingPage: React.FC = () => {
     if (isPhase1) {
         if (isGroup0) {
             // Group 0 Phase 1: Demographics -> Big 5 -> IQ -> Video -> Annotation
+            const hasVideo = !!user.phase1VideoWatched;
+
             if (!hasDemographics) {
                 nextPath = 'demographics';
                 statusMessage = "Kérjük, töltse ki a demográfiai adatokat.";
             } else if (!hasBig5) {
-                nextPath = 'big5';
+                nextPath = 'intro-big5';
                 statusMessage = "Következő lépés: Személyiségteszt.";
             } else if (!hasIQ) {
-                nextPath = 'iq';
+                nextPath = 'intro-iq';
                 statusMessage = "Következő lépés: Logikai teszt.";
+            } else if (!hasVideo) {
+                nextPath = 'intro-video';
+                statusMessage = "Következő lépés: Oktatóvideó.";
             } else {
-                nextPath = 'video';
-                statusMessage = "Következő lépés: Oktatóvideó és Gyakorlás.";
+                nextPath = 'intro-annotation';
+                statusMessage = "Következő lépés: Gyakorlás és Annotáció.";
             }
         } else {
             // Group 1 Phase 1: Demographics -> Video -> Annotation (No Big5/IQ)

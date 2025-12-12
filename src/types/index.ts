@@ -20,6 +20,9 @@ export interface Participant {
     demographics?: Demographics;
     big5?: Big5Response;
     iq?: IQResponse;
+
+    // Video status
+    phase1VideoWatched?: boolean;
 }
 
 export interface UserIdentity {
