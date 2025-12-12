@@ -11,25 +11,34 @@ interface IQTestProps {
     onComplete: () => void;
 }
 
-// Mock Questions - In reality these would be image paths
-const IQ_QUESTIONS = [
-    { id: 1, correct: 'A', options: ['A', 'B', 'C', 'D'] },
-    { id: 2, correct: 'B', options: ['A', 'B', 'C', 'D'] },
-    { id: 3, correct: 'C', options: ['A', 'B', 'C', 'D'] },
-    { id: 4, correct: 'D', options: ['A', 'B', 'C', 'D'] },
-    { id: 5, correct: 'A', options: ['A', 'B', 'C', 'D'] },
-];
-
+// We work with items 1-5 for now
+const TOTAL_ITEMS = 5;
+const OPTIONS_PER_ITEM = 6;
 const TIME_LIMIT_SECONDS = 10 * 60; // 10 minutes global limit
 
 export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
     const { user, refreshUser } = useAuth();
-    const [currentQuestion, setCurrentQuestion] = useState(0);
-    const [answers, setAnswers] = useState<{ [key: number]: string }>({});
+
+    // State
+    const [questionOrder, setQuestionOrder] = useState<number[]>([]);
+    const [currentIndex, setCurrentIndex] = useState(0);
+    const [answers, setAnswers] = useState<{ [questionId: number]: number }>({}); // qID -> selected option (1-6)
     const [timeLeft, setTimeLeft] = useState(TIME_LIMIT_SECONDS);
     const [finished, setFinished] = useState(false);
     const [submitting, setSubmitting] = useState(false);
 
+    // Initialize Random Order on Mount
+    useEffect(() => {
+        const items = Array.from({ length: TOTAL_ITEMS }, (_, i) => i + 1);
+        // Fisher-Yates Shuffle
+        for (let i = items.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [items[i], items[j]] = [items[j], items[i]];
+        }
+        setQuestionOrder(items);
+    }, []);
+
+    // Timer
     useEffect(() => {
         if (finished) return;
         const timer = setInterval(() => {
@@ -45,37 +54,37 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
         return () => clearInterval(timer);
     }, [finished]);
 
-    const handleSelect = (option: string) => {
-        setAnswers(prev => ({ ...prev, [currentQuestion + 1]: option }));
+    const handleSelect = (optionIndex: number) => {
+        const currentQId = questionOrder[currentIndex];
+        setAnswers(prev => ({ ...prev, [currentQId]: optionIndex }));
     };
 
     const handleNext = () => {
-        if (currentQuestion < IQ_QUESTIONS.length - 1) {
-            setCurrentQuestion(prev => prev + 1);
+        if (currentIndex < questionOrder.length - 1) {
+            setCurrentIndex(prev => prev + 1);
+            window.scrollTo(0, 0);
         } else {
             setFinished(true);
         }
     };
 
-    const calculateScore = () => {
-        let score = 0;
-        IQ_QUESTIONS.forEach(q => {
-            if (answers[q.id] === q.correct) score++;
-        });
-        return score;
-    };
-
+    // Since we don't have the "correct" usage defined for real images yet, 
+    // we save the raw answers and calculate score later or just save all data.
+    // For now we will save 'score' as 0 or calculate if we knew the keys.
     const submit = async () => {
         if (!user) return;
         setSubmitting(true);
-        const score = calculateScore();
 
         try {
             const iqData: IQResponse = {
-                score,
-                completedAt: Date.now()
+                answers, // Save the map of QuestionID -> SelectedOption
+                questionOrder, // Save the order presented
+                completedAt: Date.now(),
+                timeRemaining: timeLeft
             };
 
+            // Using 'iq' field but now storing richer data.
+            // Note: Types might need update if strict validation is on, but Firestore is flexible.
             await setDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, user.userID), {
                 iq: iqData
             }, { merge: true });
@@ -92,23 +101,30 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
 
     // Trigger submission when finished
     useEffect(() => {
-        if (finished) {
+        if (finished && questionOrder.length > 0) {
             submit();
         }
-    }, [finished]);
+    }, [finished, questionOrder]);
 
+    if (questionOrder.length === 0) return <div className="p-8 text-center">Betöltés...</div>;
     if (finished && submitting) return <div className="text-center p-8 text-xl font-bold text-gray-700">Eredmények mentése...</div>;
 
-    const q = IQ_QUESTIONS[currentQuestion];
+    const currentQId = questionOrder[currentIndex];
+    // Assuming options are always 1..6
+    const options = Array.from({ length: OPTIONS_PER_ITEM }, (_, i) => i + 1);
+
     const formatTime = (s: number) => {
         const m = Math.floor(s / 60);
         const sec = s % 60;
         return `${m}:${sec.toString().padStart(2, '0')}`;
     };
 
+    const selectedOption = answers[currentQId];
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <Card className="max-w-2xl w-full">
+            <Card className="max-w-4xl w-full">
+                {/* Header */}
                 <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
                     <h2 className="text-2xl font-bold text-gray-900">Logika Teszt (Raven)</h2>
                     <div className={`font-mono font-bold text-xl px-4 py-2 rounded-lg bg-gray-50 ${timeLeft < 60 ? 'text-red-500 bg-red-50' : 'text-gray-700'}`}>
@@ -116,45 +132,69 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                     </div>
                 </div>
 
-                <div className="mb-8">
-                    <div className="flex justify-between items-end mb-4">
-                        <span className="text-gray-500 font-medium">Kérdés {currentQuestion + 1} / {IQ_QUESTIONS.length}</span>
-                        <div className="h-2 w-32 bg-gray-100 rounded-full overflow-hidden">
-                            <div
-                                className="h-full bg-blue-500 transition-all duration-300"
-                                style={{ width: `${((currentQuestion + 1) / IQ_QUESTIONS.length) * 100}%` }}
-                            />
-                        </div>
-                    </div>
-
-                    <div className="bg-white border-2 border-gray-100 h-64 flex items-center justify-center mb-8 rounded-xl shadow-inner text-gray-400 font-medium bg-gray-50/50">
-                        [Raven Mátrix Kép #{q.id} Helye]
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4 max-w-lg mx-auto">
-                        {q.options.map(opt => (
-                            <button
-                                key={opt}
-                                onClick={() => handleSelect(opt)}
-                                className={`p-6 border-2 rounded-xl font-bold text-xl transition-all duration-200 transform hover:scale-[1.02] 
-                                    ${answers[q.id] === opt
-                                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
-                                        : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                    }`}
-                            >
-                                {opt}
-                            </button>
-                        ))}
+                {/* Progress */}
+                <div className="flex justify-between items-end mb-6">
+                    <span className="text-gray-500 font-medium">Kérdés {currentIndex + 1} / {TOTAL_ITEMS}</span>
+                    <div className="h-2 w-32 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                            className="h-full bg-blue-500 transition-all duration-300"
+                            style={{ width: `${((currentIndex + 1) / TOTAL_ITEMS) * 100}%` }}
+                        />
                     </div>
                 </div>
 
-                <div className="flex justify-end pt-4 border-t border-gray-100">
+                {/* Question Image */}
+                <div className="mb-4 lg:mb-6 p-1 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-center">
+                    <img
+                        src={`/cognitivePics/${currentQId}.png`}
+                        alt={`Question ${currentQId}`}
+                        className="max-h-[200px] lg:max-h-[260px] w-auto object-contain"
+                    />
+                </div>
+
+                {/* Options Grid */}
+                <div className="grid grid-cols-3 gap-2 lg:gap-3 mb-6 lg:mb-8">
+                    {options.map(optNum => (
+                        <button
+                            key={optNum}
+                            onClick={() => handleSelect(optNum)}
+                            className={`
+                                relative p-0.5 lg:p-1 rounded-lg transition-all duration-200 border-2
+                                flex items-center justify-center overflow-hidden bg-white
+                                hover:border-blue-300 hover:shadow-md
+                                ${selectedOption === optNum
+                                    ? 'border-blue-600 ring-2 ring-blue-100 shadow-lg scale-[1.02]'
+                                    : 'border-gray-200'
+                                }
+                            `}
+                        >
+                            <img
+                                src={`/cognitivePics/${currentQId}.${optNum}.png`}
+                                alt={`Option ${optNum}`}
+                                className="w-full h-20 lg:h-28 object-contain"
+                            />
+                            {/* Selection Indicator overlay */}
+                            {selectedOption === optNum && (
+                                <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center">
+                                    <div className="bg-blue-600 text-white rounded-full p-1 lg:p-2 shadow-sm scale-75 lg:scale-100">
+                                        <svg className="w-4 h-4 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Footer / Navigation */}
+                <div className="flex justify-end pt-6 border-t border-gray-100">
                     <Button
                         onClick={handleNext}
-                        disabled={!answers[q.id]}
-                        className="w-full sm:w-auto px-10"
+                        disabled={!selectedOption}
+                        className="w-full sm:w-auto px-10 text-lg py-3"
                     >
-                        {currentQuestion === IQ_QUESTIONS.length - 1 ? 'Befejezés' : 'Következő →'}
+                        {currentIndex === TOTAL_ITEMS - 1 ? 'Befejezés' : 'Következő →'}
                     </Button>
                 </div>
             </Card>

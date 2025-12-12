@@ -74,6 +74,9 @@ export interface Big5Response {
 }
 
 export interface IQResponse {
-    score: number;
+    answers: { [questionId: number]: number }; // ID -> OptionIndex (1-6)
+    questionOrder: number[];
     completedAt: number;
+    timeRemaining: number;
+    score?: number;
 }
