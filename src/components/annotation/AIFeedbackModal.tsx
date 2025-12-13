@@ -1,15 +1,15 @@
 import React, { useRef, useEffect, useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
+import { calculateIoU } from '../../utils/math';
 import type { Box } from '../../utils/math';
 import type { ColoredBox } from '../common/BBoxTool';
 
 interface AIFeedbackModalProps {
     imageSrc: string;
     userBoxes: ColoredBox[];
-    aiBox?: Box;
+    aiBox?: Box; // NORMALIZED (0-1)
     aiPrediction: 'igen' | 'nem';
     aiConfidence: number;
-    iouPercent: number;
     initialDecision: 'igen' | 'nem' | null;
     heatmapPath?: string;
     onRevise: (newDecision: 'igen' | 'nem') => void;
@@ -25,7 +25,6 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
     aiBox,
     aiPrediction,
     aiConfidence,
-    iouPercent,
     initialDecision,
     heatmapPath,
     onRevise,
@@ -33,7 +32,8 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
 }) => {
         const [decision, setDecision] = useState<'igen' | 'nem'>(initialDecision || aiPrediction);
         const [mode, setMode] = useState<'review' | 'rate'>('review'); // Internal mode switching
-        const [showHeatmap, setShowHeatmap] = useState(false);
+        const [showHeatmap, setShowHeatmap] = useState(true);
+        const [symptomIoUs, setSymptomIoUs] = useState<Record<string, number>>({});
 
         const imgRef = useRef<HTMLImageElement>(null);
         const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -51,8 +51,8 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
             canvas.height = img.clientHeight;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+            // Helper to draw box
             const drawBox = (box: Box, color: string, label: string) => {
-                // Convert natural to display
                 const scaleX = img.clientWidth / img.naturalWidth;
                 const scaleY = img.clientHeight / img.naturalHeight;
 
@@ -71,10 +71,8 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                 const textHeight = 16;
                 const padding = 4;
 
-                // Position text above box, unless it's too high up, then below? 
-                // Defaulting to above-left aligned
                 let ly = by - textHeight - padding;
-                if (ly < 0) ly = by + bh + padding; // Flip to bottom if out of bounds
+                if (ly < 0) ly = by + bh + padding;
 
                 // Label Background
                 ctx.fillStyle = color;
@@ -85,25 +83,54 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                 ctx.fillText(label, bx + padding, ly + textHeight - 2);
             };
 
-            // Only draw AI box if Heatmap is NOT shown
-            if (aiBox && !showHeatmap) drawBox(aiBox, 'rgba(255, 0, 0, 0.9)', 'AI');
+            // Calculate AI Box in Pixels (if exists)
+            let aiBoxPixels: Box | null = null;
+            if (aiBox) {
+                aiBoxPixels = {
+                    x: aiBox.x * img.naturalWidth,
+                    y: aiBox.y * img.naturalHeight,
+                    width: aiBox.width * img.naturalWidth,
+                    height: aiBox.height * img.naturalHeight
+                };
+            }
+
+            // Calculate IoU breakdown
+            const newIoUs: Record<string, number> = {};
+            if (aiBoxPixels && userBoxes.length > 0) {
+                userBoxes.forEach(ub => {
+                    newIoUs[ub.id] = calculateIoU(ub.box, aiBoxPixels!);
+                });
+            }
+
+            // Deep check to avoid loop
+            if (JSON.stringify(newIoUs) !== JSON.stringify(symptomIoUs)) {
+                setTimeout(() => setSymptomIoUs(newIoUs), 0);
+            }
+
+            // Draw Only
+            if (aiBoxPixels && !showHeatmap) {
+                drawBox(aiBoxPixels, 'rgba(255, 0, 0, 0.9)', 'AI');
+            }
 
             userBoxes.forEach(b => {
-                drawBox(b.box, b.color, `Ön (${b.label})`);
+                drawBox(b.box, b.color, b.label || '');
             });
         };
 
         useEffect(() => {
             const img = imgRef.current;
             if (!img) return;
-            if (img.complete) drawOverlay();
-            img.addEventListener('load', drawOverlay);
+            // Handle load
+            const handleLoad = () => drawOverlay();
+
+            if (img.complete) handleLoad();
+            img.addEventListener('load', handleLoad);
             window.addEventListener('resize', drawOverlay);
             return () => {
-                img.removeEventListener('load', drawOverlay);
+                img.removeEventListener('load', handleLoad);
                 window.removeEventListener('resize', drawOverlay);
             };
-        }, [userBoxes, aiBox]);
+        }, [userBoxes, aiBox, showHeatmap]); // calculatedIoU excluded to prevent loop
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -133,36 +160,37 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                             /* PHASE A: Review AI & Decide */
                             <>
                                 <div>
-                                    <h2 className="text-2xl font-bold mb-6 text-gray-800 border-b pb-2">AI Elemzés</h2>
+                                    <h2 className="text-xl font-bold mb-4">AI Elemzés</h2>
 
                                     {/* Heatmap Toggle */}
                                     {heatmapPath && (
                                         <button
                                             onClick={() => setShowHeatmap(!showHeatmap)}
-                                            className={`w-full mb-6 py-3 px-4 rounded-xl border-2 flex items-center justify-center gap-2 font-bold transition-all
-                                                ${showHeatmap
-                                                    ? 'bg-blue-100 border-blue-500 text-blue-700'
-                                                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                                                }`}
+                                            className={`w-full py-2 px-4 rounded-lg bg-white border-2 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 font-medium transition-colors mb-6
+                                                ${showHeatmap ? 'border-blue-500 text-blue-600' : 'text-gray-600'}`}
                                         >
                                             {showHeatmap ? <EyeOff size={20} /> : <Eye size={20} />}
                                             {showHeatmap ? 'Eredeti Kép' : 'Hőtérkép Mutatása'}
                                         </button>
                                     )}
 
-                                    <div className="space-y-4 text-sm text-gray-700">
-                                        <div className="flex justify-between items-center bg-white p-3 rounded shadow-sm">
-                                            <span>Átfedés:</span>
-                                            <span className="font-bold text-xl">{Math.round(iouPercent)}%</span>
-                                        </div>
-                                        <div className="flex justify-between items-center bg-white p-3 rounded shadow-sm">
-                                            <span>AI Predikció:</span>
+                                    <div className="space-y-3 text-sm">
+                                        {/* Breakdown of Overlaps */}
+                                        {userBoxes.map((box) => (
+                                            <div key={box.id} className="flex justify-between items-center border-b pb-2">
+                                                <span className="text-gray-600">Átfedés ({box.label}. Tünet):</span>
+                                                <span className="font-bold text-lg">{Math.round((symptomIoUs[box.id] || 0) * 100)}%</span>
+                                            </div>
+                                        ))}
+
+                                        <div className="flex justify-between items-center border-b pb-2">
+                                            <span className="text-gray-600">AI Predikció:</span>
                                             <span className={`font-bold text-lg ${aiPrediction === 'igen' ? 'text-red-600' : 'text-green-600'}`}>
                                                 {aiPrediction.toUpperCase()}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between items-center bg-white p-3 rounded shadow-sm">
-                                            <span>AI Biztonság:</span>
+                                        <div className="flex justify-between items-center border-b pb-2">
+                                            <span className="text-gray-600">AI Biztonság:</span>
                                             <span className="font-bold text-lg">{Math.round(aiConfidence * 100)}%</span>
                                         </div>
                                     </div>

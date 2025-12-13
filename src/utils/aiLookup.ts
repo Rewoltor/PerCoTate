@@ -20,26 +20,26 @@ const parseCSVLine = (line: string): AIPrediction | null => {
     if (parts.length < 18) return null; // Ensure we have enough columns
 
     // NEW CSV Columns (header based):
-    // 0: image (e.g. "1.png")
-    // 7: probability (e.g. 0.5289)
-    // 8: prediction (0 or 1)
-    // 10: bbox_xmin (pixels)
-    // 11: bbox_ymin (pixels)
-    // 12: bbox_xmax (pixels)
-    // 13: bbox_ymax (pixels)
+    // 0: image
+    // 4: ai_confidence (e.g. 0.9663)
+    // 9: prediction (0 or 1)
+    // 15: bbox_xmin_norm
+    // 16: bbox_ymin_norm
+    // 17: bbox_xmax_norm
+    // 18: bbox_ymax_norm
 
-    const imageId = parts[0]; // "1.png"
-    const probability = parseFloat(parts[7]);
-    const predictionBin = parseInt(parts[8]);
+    const imageId = parts[0];
+    const probability = parseFloat(parts[4]); // Using ai_confidence
+    const predictionBin = parseInt(parts[9]);
 
-    // BBox (pixels)
-    const xmin = parseFloat(parts[10]);
-    const ymin = parseFloat(parts[11]);
-    const xmax = parseFloat(parts[12]);
-    const ymax = parseFloat(parts[13]);
+    // BBox (normalized)
+    const xmin = parseFloat(parts[15]);
+    const ymin = parseFloat(parts[16]);
+    const xmax = parseFloat(parts[17]);
+    const ymax = parseFloat(parts[18]);
 
     // Check if box exists (validity check).
-    const hasBox = (xmax > 0 || ymax > 0) && (xmax > xmin) && (ymax > ymin);
+    const hasBox = (xmax > 0 || ymax > 0);
 
     // Construct paths
     const plainImagePath = `/dataset/no_map/${imageId}`;
@@ -56,7 +56,7 @@ const parseCSVLine = (line: string): AIPrediction | null => {
             y: ymin,
             width: xmax - xmin,
             height: ymax - ymin
-        } : undefined,
+        } : undefined, // Box is NORMALIZED (0-1)
         heatmapPath: finalHeatmapPath
     };
 };

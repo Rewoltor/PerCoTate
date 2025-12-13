@@ -215,13 +215,6 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
     if (loading || !aiData || !user) return <div>Loading AI Trial...</div>;
 
-    // IoU Calculation (Max IoU of either box?)
-    // This is just for UI visualization if needed.
-    // Assuming AI has 1 box.
-    const iou1 = (box1 && aiData.box) ? calculateIoU(box1, aiData.box) : 0;
-    const iou2 = (box2 && aiData.box) ? calculateIoU(box2, aiData.box) : 0;
-    const maxIoU = Math.max(iou1, iou2);
-
     // Prepare boxes for BBoxTool
     const displayBoxes: ColoredBox[] = [];
     if (box1) displayBoxes.push({ id: 'box1', box: box1, color: '#10b981', label: '1' });
@@ -246,7 +239,6 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                     aiBox={aiData.box}
                     aiPrediction={aiData.diagnosis}
                     aiConfidence={aiData.confidence}
-                    iouPercent={maxIoU}
                     initialDecision={initialDiagnosis}
                     heatmapPath={aiData.heatmapPath}
                     onRevise={handleFeedbackRevise}

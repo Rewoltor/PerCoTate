@@ -23,5 +23,5 @@ export const calculateIoU = (box1: Box | null, box2: Box | null): number => {
 
     if (unionArea === 0) return 0;
 
-    return (intersectionArea / unionArea) * 100; // Return as percentage 0-100
+    return (intersectionArea / unionArea);
 };
