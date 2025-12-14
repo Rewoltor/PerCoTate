@@ -122,80 +122,101 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
     const selectedOption = answers[currentQId];
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <Card className="max-w-4xl w-full">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-2 lg:p-4">
+            <Card className="max-w-6xl w-full flex flex-col h-[90vh] lg:h-auto max-h-[900px]">
                 {/* Header */}
-                <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-100">
-                    <h2 className="text-2xl font-bold text-gray-900">Logika Teszt</h2>
-                    <div className={`font-mono font-bold text-xl px-4 py-2 rounded-lg bg-gray-50 ${timeLeft < 60 ? 'text-red-500 bg-red-50' : 'text-gray-700'}`}>
-                        {formatTime(timeLeft)}
+                <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 shrink-0">
+                    <h2 className="text-xl font-bold text-gray-900">Logika Teszt</h2>
+                    <div className="flex items-center gap-6">
+                        <div className="flex flex-col items-end">
+                            <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Haladás</span>
+                            <span className="text-sm font-bold text-gray-700">{currentIndex + 1} / {TOTAL_ITEMS}</span>
+                        </div>
+                        <div className={`font-mono font-bold text-xl px-4 py-2 rounded-xl bg-gray-50 flex items-center gap-2 ${timeLeft < 60 ? 'text-red-500 bg-red-50' : 'text-gray-900'}`}>
+                            <svg className="w-5 h-5 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            {formatTime(timeLeft)}
+                        </div>
                     </div>
                 </div>
 
-                {/* Progress */}
-                <div className="flex justify-between items-end mb-6">
-                    <span className="text-gray-500 font-medium">Kérdés {currentIndex + 1} / {TOTAL_ITEMS}</span>
-                    <div className="h-2 w-32 bg-gray-100 rounded-full overflow-hidden">
-                        <div
-                            className="h-full bg-blue-500 transition-all duration-300"
-                            style={{ width: `${((currentIndex + 1) / TOTAL_ITEMS) * 100}%` }}
-                        />
-                    </div>
-                </div>
-
-                {/* Question Image */}
-                <div className="mb-4 lg:mb-6 p-1 bg-white rounded-xl shadow-sm border border-gray-100 flex justify-center">
-                    <img
-                        src={`/cognitivePics/${currentQId}.png`}
-                        alt={`Question ${currentQId}`}
-                        className="max-h-[200px] lg:max-h-[260px] w-auto object-contain"
+                {/* Progress Line */}
+                <div className="h-1 w-full bg-gray-100 shrink-0">
+                    <div
+                        className="h-full bg-gray-900 transition-all duration-500 ease-out"
+                        style={{ width: `${((currentIndex + 1) / TOTAL_ITEMS) * 100}%` }}
                     />
                 </div>
 
-                {/* Options Grid */}
-                <div className="grid grid-cols-3 gap-2 lg:gap-3 mb-6 lg:mb-8">
-                    {options.map(optNum => (
-                        <button
-                            key={optNum}
-                            onClick={() => handleSelect(optNum)}
-                            className={`
-                                relative p-0.5 lg:p-1 rounded-lg transition-all duration-200 border-2
-                                flex items-center justify-center overflow-hidden bg-white
-                                hover:border-blue-300 hover:shadow-md
-                                ${selectedOption === optNum
-                                    ? 'border-blue-600 ring-2 ring-blue-100 shadow-lg scale-[1.02]'
-                                    : 'border-gray-200'
-                                }
-                            `}
-                        >
-                            <img
-                                src={`/cognitivePics/${currentQId}.${optNum}.png`}
-                                alt={`Option ${optNum}`}
-                                className="w-full h-20 lg:h-28 object-contain"
-                            />
-                            {/* Selection Indicator overlay */}
-                            {selectedOption === optNum && (
-                                <div className="absolute inset-0 bg-blue-500/10 flex items-center justify-center">
-                                    <div className="bg-blue-600 text-white rounded-full p-1 lg:p-2 shadow-sm scale-75 lg:scale-100">
-                                        <svg className="w-4 h-4 lg:w-6 lg:h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                        </svg>
-                                    </div>
-                                </div>
-                            )}
-                        </button>
-                    ))}
-                </div>
+                {/* Main Content Body */}
+                <div className="flex-1 overflow-y-auto lg:overflow-visible p-6 lg:p-8">
+                    <div className="flex flex-col lg:flex-row gap-8 h-full">
 
-                {/* Footer / Navigation */}
-                <div className="flex justify-end pt-6 border-t border-gray-100">
-                    <Button
-                        onClick={handleNext}
-                        disabled={!selectedOption}
-                        className="w-full sm:w-auto px-10 text-lg py-3"
-                    >
-                        {currentIndex === TOTAL_ITEMS - 1 ? 'Befejezés' : 'Következő →'}
-                    </Button>
+                        {/* LEFT: Question Image Area (Larger) */}
+                        <div className="flex-1 bg-gray-50 rounded-2xl border border-gray-100 flex items-center justify-center p-4 lg:p-8 min-h-[300px]">
+                            <img
+                                src={`/cognitivePics/${currentQId}.png`}
+                                alt={`Question ${currentQId}`}
+                                className="max-w-full max-h-full object-contain shadow-sm rounded-lg"
+                                style={{ maxHeight: '400px' }}
+                            />
+                        </div>
+
+                        {/* RIGHT: Options & Actions (Sidebar on Desktop) */}
+                        <div className="lg:w-[400px] xl:w-[450px] flex flex-col shrink-0">
+                            <div className="mb-4">
+                                <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-widest mb-4">Válaszlehetőségek</h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {options.map(optNum => (
+                                        <button
+                                            key={optNum}
+                                            onClick={() => handleSelect(optNum)}
+                                            className={`
+                                                relative h-32 rounded-xl transition-all duration-200 border-2
+                                                flex items-center justify-center overflow-hidden bg-white
+                                                group
+                                                ${selectedOption === optNum
+                                                    ? 'border-gray-900 bg-gray-50 shadow-md ring-1 ring-gray-900'
+                                                    : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                                                }
+                                            `}
+                                        >
+                                            <img
+                                                src={`/cognitivePics/${currentQId}.${optNum}.png`}
+                                                alt={`Option ${optNum}`}
+                                                className="w-full h-full object-contain p-2"
+                                            />
+
+                                            {/* Checkmark Badge */}
+                                            {selectedOption === optNum && (
+                                                <div className="absolute top-2 right-2 bg-gray-900 text-white rounded-full p-1 shadow-sm">
+                                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                                    </svg>
+                                                </div>
+                                            )}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <div className="mt-auto pt-6 border-t border-gray-100">
+                                <Button
+                                    onClick={handleNext}
+                                    disabled={!selectedOption}
+                                    className="w-full py-4 text-lg"
+                                >
+                                    {currentIndex === TOTAL_ITEMS - 1 ? 'Teszt Befejezése' : 'Következő Kérdés →'}
+                                </Button>
+                                {!selectedOption && (
+                                    <p className="text-center text-xs text-gray-400 mt-2">
+                                        Válasszon egy lehetőséget a folytatáshoz
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </Card>
         </div>

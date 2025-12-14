@@ -6,7 +6,7 @@ import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 // import type { TrialData } from '../../types';
 import { getAIPrediction } from '../../utils/aiLookup';
-import { calculateIoU, type Box } from '../../utils/math';
+import { type Box } from '../../utils/math';
 import { BBoxTool, type ColoredBox } from '../common/BBoxTool';
 import { AIFeedbackModal } from './AIFeedbackModal';
 import { PreConfidenceModal } from './PreConfidenceModal';
