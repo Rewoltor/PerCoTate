@@ -69,7 +69,7 @@ export const FinalCompletion: React.FC = () => {
                 </div>
 
                 <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                    {daysLeft ? "A 2. Fázis Még Nem Elérhető" : "Gratulálunk!"}
+                    {daysLeft ? "Szuper!" : "Gratulálunk!"}
                 </h1>
 
                 {daysLeft ? (
@@ -88,18 +88,18 @@ export const FinalCompletion: React.FC = () => {
                     <div className="mb-8">
                         <p className="text-xl text-gray-800 font-medium mb-2">
                             {isPhase2AlreadyDone
-                                ? "Sikeresen teljesítette a teljes kutatássorozatot."
-                                : "Sikeresen teljesítette az első fázist."}
+                                ? "Sikeresen teljesítetted a teljes kutatássorozatot."
+                                : "Sikeresen teljesítetted az első fázist."}
                         </p>
                         <p className="text-gray-600">
-                            Köszönjük a részvételét és a ránk szánt idejét.
+                            Köszönjük a részvételét és a ránk szánt időt.
                         </p>
                     </div>
                 )}
 
                 <div className="space-y-4">
                     <p className="text-sm text-gray-500">
-                        A folytatáshoz vagy kilépéshez kérjük zárja be az ablakot, vagy térjen vissza a kezdőlapra.
+                        Most bezárhatod az ablakot.
                     </p>
 
                     <button

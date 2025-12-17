@@ -63,7 +63,7 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
         };
 
         userBoxes.forEach(b => {
-            drawBox(b.box, b.color, `Ön (${b.label})`);
+            drawBox(b.box, b.color, `${b.label}`);
         });
     };
 
@@ -103,14 +103,14 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
 
                 {/* Right: Controls */}
                 <div className="w-1/3 p-8 flex flex-col justify-center bg-gray-50">
-                    <h2 className="text-3xl font-bold mb-4 text-gray-800">Első Döntés Megerősítése</h2>
+                    <h2 className="text-3xl font-bold mb-4 text-gray-800">Első Döntés</h2>
                     <p className="text-gray-600 mb-8 text-lg">
-                        Ön <strong className={activeDiagnosis === 'nem' ? 'text-green-600' : 'text-red-600'}>
+                        <strong className={activeDiagnosis === 'nem' ? 'text-green-600' : 'text-red-600'}>
                             {activeDiagnosis.toUpperCase()}
-                        </strong> diagnózist jelölt.
+                        </strong> diagnózist jelölted meg.
                     </p>
 
-                    <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire biztos a döntésében?</h3>
+                    <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire vagy biztos a döntésedben?</h3>
                     <div className="grid grid-cols-7 gap-1 mb-2">
                         {[1, 2, 3, 4, 5, 6, 7].map(num => (
                             <button

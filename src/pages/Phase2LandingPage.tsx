@@ -31,16 +31,16 @@ export const Phase2LandingPage: React.FC = () => {
     if (isGroup0) {
         // Group 0 in Phase 2 just needs to see the Video then AI Annotation
         nextPath = 'intro-video';
-        statusMessage = "Üdvözöljük újra a 2. fázisban!";
+        statusMessage = "Üdvözöljük újra!";
         stepTitle = "Oktatóvideó és Gyakorlás";
         stepDescription = "Ebben a fázisban egy mesterséges intelligencia fogja segíteni a munkáját. Kérjük, tekintse meg a rövid oktatóvideót.";
     } else {
         // Group 1 in Phase 2 needs Big5 -> IQ -> Video -> NoAI
         if (!hasBig5) {
             nextPath = 'intro-big5';
-            statusMessage = "Üdvözöljük újra a 2. fázisban!";
+            statusMessage = "Üdvözöljük újra!";
             stepTitle = "Személyiségteszt";
-            stepDescription = "A folytatás előtt kérjük, töltse ki rövid személyiségtesztünket.";
+            stepDescription = "A folytatás előtt kérjük, töltsd ki rövid személyiségtesztünket.";
         } else if (!hasIQ) {
             nextPath = 'intro-iq';
             statusMessage = "Továbblépés";
@@ -70,7 +70,7 @@ export const Phase2LandingPage: React.FC = () => {
                         {statusMessage}
                     </h1>
                     <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-                        Köszönjük, hogy visszatért hozzánk. A kutatás második szakaszában új kihívások várják.
+                        Köszönjük, hogy visszatértél. A kutatás második szakaszában új kihívások várnak.
                     </p>
                 </div>
 
@@ -87,8 +87,8 @@ export const Phase2LandingPage: React.FC = () => {
                                 <p className="text-sm text-indigo-800 font-medium">
                                     <span className="mr-2">💡</span>
                                     {isGroup0
-                                        ? "Most kipróbálhatja AI asszisztensünket."
-                                        : "Most önállóan fog dolgozni a feladatokon."
+                                        ? "Most kipróbálhatod AI asszisztensünket."
+                                        : "Most AI nélkül fogsz dolgozni a feladatokon."
                                     }
                                 </p>
                             </div>

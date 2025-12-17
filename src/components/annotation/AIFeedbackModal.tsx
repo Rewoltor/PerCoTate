@@ -184,13 +184,13 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                         ))}
 
                                         <div className="flex justify-between items-center border-b pb-2">
-                                            <span className="text-gray-600">AI Predikció:</span>
+                                            <span className="text-gray-600">Az AI diagnózisa:</span>
                                             <span className={`font-bold text-lg ${aiPrediction === 'igen' ? 'text-red-600' : 'text-green-600'}`}>
                                                 {aiPrediction.toUpperCase()}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center border-b pb-2">
-                                            <span className="text-gray-600">AI Biztonság:</span>
+                                            <span className="text-gray-600">Az AI magabiztossága:</span>
                                             <span className="font-bold text-lg">{Math.round(aiConfidence * 100)}%</span>
                                         </div>
                                     </div>
@@ -203,8 +203,8 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                         onChange={(e) => setDecision(e.target.value as 'igen' | 'nem')}
                                         className="w-full p-4 border rounded-xl mb-6 text-lg font-medium bg-white"
                                     >
-                                        <option value="igen">IGEN</option>
-                                        <option value="nem">NEM</option>
+                                        <option value="igen">Pozitív</option>
+                                        <option value="nem">Negatív</option>
                                     </select>
 
                                     <button
@@ -227,7 +227,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                     Az Ön VÉGSŐ döntése: <strong className={decision === 'igen' ? 'text-red-600' : 'text-green-600'}>{decision.toUpperCase()}</strong>
                                 </p>
 
-                                <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire biztos a döntésében?</h3>
+                                <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire vagy biztos a döntésedben?</h3>
 
                                 <div className="grid grid-cols-7 gap-1 mb-2">
                                     {[1, 2, 3, 4, 5, 6, 7].map(num => (

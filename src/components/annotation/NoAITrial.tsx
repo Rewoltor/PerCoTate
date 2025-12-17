@@ -173,8 +173,8 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                 {/* Right: Controls */}
                 <div className="w-[400px] bg-white border-l p-6 flex flex-col gap-8 overflow-y-auto shadow-xl z-20">
                     <div>
-                        <h2 className="text-xl font-bold mb-1 text-gray-900">{currentTrialIndex + 1}. Eset / {TOTAL_TRIALS}</h2>
-                        <p className="text-gray-500 text-sm">Kontroll csoport (AI nélkül)</p>
+                        <h2 className="text-xl font-bold mb-1 text-gray-900">{currentTrialIndex + 1} / {TOTAL_TRIALS}</h2>
+                        <p className="text-gray-500 text-sm">(AI nélkül)</p>
                     </div>
 
                     <div className="space-y-6">
@@ -189,7 +189,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                                             ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                 >
-                                    IGEN
+                                    Pozitív
                                 </button>
                                 <button
                                     onClick={() => {
@@ -200,7 +200,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                                             ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                 >
-                                    NEM
+                                    Negatív
                                 </button>
                             </div>
                         </div>
@@ -208,7 +208,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                         {/* 2. Confidence Rating - Now Step 2 */}
                         {diagnosis && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <label className="block font-semibold mb-3 text-lg text-gray-700">2. Biztonság (1-7)</label>
+                                <label className="block font-semibold mb-3 text-lg text-gray-700">2. Mennyire vagy biztos a diagnózisodban? (1-7)</label>
                                 <div className="grid grid-cols-7 gap-1">
                                     {[1, 2, 3, 4, 5, 6, 7].map(num => (
                                         <button

@@ -70,7 +70,16 @@ export interface Demographics {
 }
 
 export interface Big5Response {
-    [questionId: string]: number; // 1-5
+    rawAnswers: { [questionId: string]: number }; // 1-5
+    calculatedTraits: {
+        Extraversion: number;
+        Agreeableness: number;
+        Conscientiousness: number;
+        Neuroticism: number; // Negative Emotionality
+        OpenMindedness: number;
+    };
+    calculatedFacets: { [facetName: string]: number };
+    timestamp: number;
 }
 
 export interface IQResponse {

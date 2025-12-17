@@ -277,12 +277,12 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
                             {/* Section 1: Findings */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">1. Mit lát?</h3>
+                                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">1. Mit látsz?</h3>
 
                                 {/* Finding 1 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="font-semibold text-gray-700">1. Csont sarkantyú (Osteofiták)</label>
+                                        <label className="font-semibold text-gray-700">a. Csont sarkantyú (Osteofiták)</label>
                                         <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
                                     </div>
 
@@ -300,7 +300,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                         }}
                                         className="w-full p-2 border rounded mb-3 bg-white"
                                     >
-                                        <option value="" disabled>-- Válasszon --</option>
+                                        <option value="" disabled>-- Válassz --</option>
                                         <option value="tunet">Tünet</option>
                                         <option value="bizonytalan">Bizonytalan</option>
                                         <option value="nincsen">Nincsen Tünet</option>
@@ -329,7 +329,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                 {/* Finding 2 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="font-semibold text-gray-700">2. Ízületi rés beszűkülés</label>
+                                        <label className="font-semibold text-gray-700">b. Ízületi rés beszűkülés</label>
                                         <div className="h-3 w-3 rounded-full bg-blue-500"></div>
                                     </div>
 
@@ -347,7 +347,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                         }}
                                         className="w-full p-2 border rounded mb-3 bg-white"
                                     >
-                                        <option value="" disabled>-- Válasszon --</option>
+                                        <option value="" disabled>-- Válassz --</option>
                                         <option value="tunet">Tünet</option>
                                         <option value="bizonytalan">Bizonytalan</option>
                                         <option value="nincsen">Nincsen Tünet</option>
@@ -385,7 +385,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                                 ? 'bg-blue-600 border-blue-600 text-white scale-[1.02]'
                                                 : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                     >
-                                        IGEN
+                                        Pozitív
                                     </button>
                                     <button
                                         onClick={() => setInitialDiagnosis('nem')}
@@ -394,7 +394,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                                 ? 'bg-blue-600 border-blue-600 text-white scale-[1.02]'
                                                 : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                     >
-                                        NEM
+                                        Negatív
                                     </button>
                                 </div>
                             </div>

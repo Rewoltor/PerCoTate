@@ -44,7 +44,7 @@ export const LandingPage: React.FC = () => {
 
             if (!hasDemographics) {
                 nextPath = 'demographics';
-                statusMessage = "Kérjük, töltse ki a demográfiai adatokat.";
+                statusMessage = "Kérjük, töltsd ki a demográfiai adataidat.";
             } else if (!hasBig5) {
                 nextPath = 'intro-big5';
                 statusMessage = "Következő lépés: Személyiségteszt.";
@@ -56,13 +56,13 @@ export const LandingPage: React.FC = () => {
                 statusMessage = "Következő lépés: Oktatóvideó.";
             } else {
                 nextPath = 'intro-annotation';
-                statusMessage = "Következő lépés: Gyakorlás és Annotáció.";
+                statusMessage = "Következő lépés: Annotáció.";
             }
         } else {
             // Group 1 Phase 1: Demographics -> Video -> Annotation (No Big5/IQ)
             if (!hasDemographics) {
                 nextPath = 'demographics';
-                statusMessage = "Kérjük, töltse ki a demográfiai adatokat.";
+                statusMessage = "Kérjük, töltsd ki a demográfiai adataidat.";
             } else {
                 nextPath = 'video';
                 statusMessage = "Következő lépés: Oktatóvideó és Gyakorlás.";
@@ -94,7 +94,7 @@ export const LandingPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-8 text-center px-4">
             <h1 className="text-4xl font-bold mb-8 text-gray-900 tracking-tight">
-                {isPhase1 ? "Üdvözöljük az 1. fázisban!" : "Üdvözöljük a 2. fázisban!"}
+                {isPhase1 ? "Üdvözlünk az 1. fázisban!" : "Üdvözlünk a 2. fázisban!"}
             </h1>
 
             <Card className="max-w-2xl w-full text-left">
@@ -111,10 +111,10 @@ export const LandingPage: React.FC = () => {
                             <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                             Fázis: <strong>{isPhase1 ? "1. (Kezdeti)" : "2. (Kontroll/AI váltás)"}</strong>
                         </li>
-                        <li className="flex items-center gap-2">
+                        {/* <li className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                             Csoport: <strong>{treatmentGroup === '0' ? "A" : "B"}</strong>
-                        </li>
+                        </li> */}
                         <li className="flex items-center gap-2">
                             <span className="w-2 h-2 bg-blue-400 rounded-full"></span>
                             Azonosító: <span className="font-mono bg-white px-2 py-0.5 rounded border border-blue-200 text-blue-600">{user.userID}</span>

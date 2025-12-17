@@ -24,10 +24,22 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
     });
     const [ageInput, setAgeInput] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [showErrors, setShowErrors] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!user || !formData.gender || !formData.school || !formData.residence || !formData.healthcareQualification || !ageInput) return;
+        setShowErrors(true);
+
+        const isValid = user &&
+            formData.gender &&
+            formData.school &&
+            formData.residence &&
+            formData.healthcareQualification &&
+            ageInput &&
+            termsAccepted;
+
+        if (!isValid) return;
 
         setSubmitting(true);
         try {
@@ -58,7 +70,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <Card title="Demográfiai Adatok" className="max-w-lg w-full">
-                <form onSubmit={handleSubmit} className="space-y-6">
+                <form onSubmit={handleSubmit} className="space-y-6" noValidate>
 
                     {/* Age */}
                     <div>
@@ -67,7 +79,10 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                             type="number"
                             value={ageInput}
                             onChange={(e) => setAgeInput(e.target.value)}
-                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg"
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg ${showErrors && !ageInput
+                                ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
+                                : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                                }`}
                             placeholder="pl. 24"
                             required
                             min="18"
@@ -82,14 +97,16 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         <select
                             value={formData.gender}
                             onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg bg-white ${showErrors && !formData.gender
+                                ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
+                                : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                                }`}
                             required
                             disabled={submitting}
                         >
                             <option value="">-- Válasszon --</option>
                             <option value="male">Férfi</option>
                             <option value="female">Nő</option>
-                            <option value="other">Egyéb</option>
                         </select>
                     </div>
 
@@ -99,7 +116,10 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         <select
                             value={formData.school}
                             onChange={(e) => setFormData({ ...formData, school: e.target.value })}
-                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg bg-white ${showErrors && !formData.school
+                                ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
+                                : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                                }`}
                             required
                             disabled={submitting}
                         >
@@ -116,7 +136,10 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         <select
                             value={formData.residence}
                             onChange={(e) => setFormData({ ...formData, residence: e.target.value })}
-                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg bg-white ${showErrors && !formData.residence
+                                ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
+                                : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                                }`}
                             required
                             disabled={submitting}
                         >
@@ -133,18 +156,39 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         <select
                             value={formData.healthcareQualification}
                             onChange={(e) => setFormData({ ...formData, healthcareQualification: e.target.value })}
-                            className="w-full p-4 rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition-all text-lg bg-white"
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg bg-white ${showErrors && !formData.healthcareQualification
+                                ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
+                                : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
+                                }`}
                             required
                             disabled={submitting}
                         >
                             <option value="">-- Válasszon --</option>
                             <option value="none">Nincsen semmilyen</option>
-                            <option value="student_1-3">Orvostanhallgató (1-3. év)</option>
-                            <option value="student_4-6">Orvostanhallgató (4-6. év)</option>
+                            <option value="student_4-6">Orvostanhallgató</option>
                             <option value="resident">Rezidens</option>
                             <option value="specialist">Szakorvos</option>
-                            <option value="other">Egyéb</option>
+                            <option value="other">Egyéb egészségügyi végzettség</option>
                         </select>
+                    </div>
+
+                    {/* Terms Checkbox */}
+                    <div className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${showErrors && !termsAccepted
+                        ? 'border-red-500 bg-red-50'
+                        : 'border-gray-200 hover:border-blue-200'
+                        }`}>
+                        <div className="flex items-start pt-1">
+                            <input
+                                type="checkbox"
+                                id="terms"
+                                checked={termsAccepted}
+                                onChange={(e) => setTermsAccepted(e.target.checked)}
+                                className="w-5 h-5 accent-blue-600 cursor-pointer"
+                            />
+                        </div>
+                        <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
+                            Megismertem és elfogadom a <a href="/terms.pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-800" onClick={(e) => e.stopPropagation()}>kutatási feltételeket</a>, valamint hozzájárulok az adataim névtelen, kutatási célú felhasználásához.
+                        </label>
                     </div>
 
                     <Button

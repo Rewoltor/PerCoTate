@@ -8,7 +8,7 @@ import { Card } from '../components/ui/Card';
 export const LoginPage: React.FC = () => {
     const { authenticate, loading, error, user, adminUnlockUser } = useAuth();
     const navigate = useNavigate();
-    const [mode, setMode] = useState<'login' | 'register'>('login');
+    const [mode, setMode] = useState<'login' | 'register'>('register');
     const [name, setName] = useState('');
     const [pin, setPin] = useState(['', '', '', '']); // Array for 4 digits
     const [showPin, setShowPin] = useState(false);
@@ -93,7 +93,7 @@ export const LoginPage: React.FC = () => {
                     <div className="bg-gray-100 p-1 rounded-xl flex w-full relative">
                         {/* Animated Pill Background */}
                         <div
-                            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out ${mode === 'login' ? 'left-1' : 'left-[calc(50%+4px)]'}`}
+                            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out ${mode === 'login' ? 'left-1' : 'left-1/2'}`}
                         />
 
                         <button
@@ -115,12 +115,12 @@ export const LoginPage: React.FC = () => {
 
                 <div className="px-1 text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">
-                        {mode === 'login' ? 'Üdvözöljük újra!' : 'Új Fiók Létrehozása'}
+                        {mode === 'login' ? 'Üdvözlünk újra!' : 'Új Fiók Létrehozása'}
                     </h2>
                     <p className="text-gray-500 text-sm mt-1">
                         {mode === 'login'
-                            ? 'Kérjük adja meg belépési adatait.'
-                            : 'Kérjük adja meg adatait a regisztrációhoz.'}
+                            ? 'Kérjük add meg belépési adataidat.'
+                            : 'Kérjük add meg adataidat a regisztrációhoz.'}
                     </p>
                 </div>
 
@@ -201,7 +201,7 @@ export const LoginPage: React.FC = () => {
                     )}
 
                     <p className="text-center text-xs text-gray-400 mt-4">
-                        Semmelweis Egyetem - PerCoTate Study
+                        Pázmány Péter Katolikus Egyetem
                     </p>
                 </form>
             </Card>

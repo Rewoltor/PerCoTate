@@ -49,7 +49,7 @@ export const VideoModule: React.FC<VideoModuleProps> = ({ onComplete, videoSrc, 
                 <div className="text-center mb-6">
                     <h2 className="text-3xl font-bold mb-4 text-gray-900">Oktatóvideó</h2>
                     <p className="text-gray-600 max-w-2xl mx-auto">
-                        Kérjük, nézze végig figyelmesen az alábbi videót a feladat megértéséhez.
+                        Kérjük, nézd végig figyelmesen az alábbi videót a feladat megértéséhez.
                         A "Tovább" gomb csak a videó végignézése után válik aktívvá.
                     </p>
                 </div>

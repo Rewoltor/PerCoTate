@@ -209,11 +209,13 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                                 >
                                     {currentIndex === TOTAL_ITEMS - 1 ? 'Teszt Befejezése' : 'Következő Kérdés →'}
                                 </Button>
-                                {!selectedOption && (
-                                    <p className="text-center text-xs text-gray-400 mt-2">
-                                        Válasszon egy lehetőséget a folytatáshoz
-                                    </p>
-                                )}
+                                <div className="mt-2 h-4">
+                                    {!selectedOption && (
+                                        <p className="text-center text-xs text-gray-400">
+                                            Válassz egy lehetőséget a folytatáshoz
+                                        </p>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>
