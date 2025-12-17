@@ -4,7 +4,7 @@ import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
-import { getAIPrediction } from '../../utils/aiLookup';
+import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import type { TrialData } from '../../types';
 
 interface NoAITrialProps {
@@ -20,6 +20,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     const [diagnosis, setDiagnosis] = useState<'igen' | 'nem' | null>(null);
     const [confidence, setConfidence] = useState<number | null>(null);
     const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
+    const [aiData, setAiData] = useState<AIPrediction | null>(null);
 
     const [saving, setSaving] = useState(false);
     const [startTime, setStartTime] = useState<number>(Date.now());
@@ -62,8 +63,11 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             .then(data => {
                 if (data && data.imageName) {
                     setCurrentImageUrl(data.imageName);
+                    setAiData(data);
                 } else {
                     console.error(`No AI data found for image ID: ${imgId}`);
+                    // Set fallback aiData if needed, or handle as error
+                    setAiData(null);
                 }
             })
             .catch(err => {
@@ -96,12 +100,20 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
 
         const trialData: TrialData = {
             trialId,
-            imageName: `img_${imageId}.png`, // Legacy field, mostly unused if we link by ID
+            imageName: `${imageId}.png`, // Legacy field, mostly unused if we link by ID
             startTime,
             endTime,
+            duration: (endTime - startTime) / 1000,
             diagnosis,
             confidence,
             aiShown: false,
+
+            // requested Data Fields from CSV
+            image: aiData?.originalImageName || `${imageId}.png`,
+            ai_confidence: aiData?.aiConfidence ?? 0,
+            ground_truth_raw: aiData?.groundTruthRaw ?? -1,
+            ground_truth_binary: aiData?.groundTruthBinary ?? -1,
+            prediction: aiData?.predictionRaw ?? -1,
         };
 
         try {

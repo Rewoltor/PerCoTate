@@ -5,7 +5,7 @@ import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 // import type { TrialData } from '../../types';
-import { getAIPrediction } from '../../utils/aiLookup';
+import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import { type Box } from '../../utils/math';
 import { BBoxTool, type ColoredBox } from '../common/BBoxTool';
 import { AIFeedbackModal } from './AIFeedbackModal';
@@ -39,7 +39,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
     // Stats
     const [startTime, setStartTime] = useState<number>(Date.now());
-    const [aiData, setAiData] = useState<any>(null); // Prediction, Box, etc.
+    const [aiData, setAiData] = useState<AIPrediction | null>(null); // Prediction, Box, etc.
 
     // Constants
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
@@ -88,7 +88,13 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                 diagnosis: 'nem',
                 confidence: 0,
                 heatmapPath: '',
-                box: undefined
+                box: undefined,
+                // Fallback metadata
+                originalImageName: `fallback_${imageId}.png`,
+                groundTruthRaw: -1,
+                groundTruthBinary: -1,
+                predictionRaw: -1,
+                aiConfidence: 0
             });
         } else {
             setAiData(data);
@@ -152,7 +158,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     };
 
     const handleFinalSubmit = async (conf: number) => {
-        if (!user) return;
+        if (!user || !aiData) return;
         console.log("Submitting final trial...", { conf, currentTrialIndex });
         setFinalConfidence(conf);
         setLoading(true);
@@ -163,12 +169,14 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
         const trialIdPrefix = isPhase2 ? 'p2_trial' : 'trial';
         const trialId = `${trialIdPrefix}_${currentTrialIndex + 1}`;
+        const endTime = Date.now();
 
         const trialData: any = {
             trialId,
-            imageName: `img_${imageId}.png`,
+            imageName: `${imageId}.png`,
             startTime,
-            endTime: Date.now(),
+            endTime,
+            duration: (endTime - startTime) / 1000,
 
             diagnosis: finalDiagnosis!,
             confidence: conf,
@@ -187,6 +195,13 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             initialConfidence: initialConfidence!,
             finalDiagnosis: finalDiagnosis!,
             finalConfidence: conf,
+
+            // requested Data Fields from CSV
+            image: aiData.originalImageName || `${imageId}.png`,
+            ai_confidence: aiData.aiConfidence,
+            ground_truth_raw: aiData.groundTruthRaw,
+            ground_truth_binary: aiData.groundTruthBinary,
+            prediction: aiData.predictionRaw,
         };
 
         try {

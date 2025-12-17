@@ -1,13 +1,20 @@
 import type { Box } from './math';
 
 export interface AIPrediction {
-    id: string; // Unique key (e.g., "baseline_1.png")
-    imageName: string; // File path: "dataset/test/0/9545822R.png" 
-    phase: string;
+    id: string; // Unique key (e.g., "1.png")
+    imageName: string; // File path: "dataset/no_map/1.png"
+    phase: string; // "phase1"
     diagnosis: 'igen' | 'nem';
     confidence: number;
     box?: Box;
-    heatmapPath: string; // "predicted/0/9545822R_gradcam.png"
+    heatmapPath: string; // "dataset/map/1.png"
+
+    // New Metadata Fields
+    originalImageName: string; // "image" column (e.g., "1.png")
+    groundTruthRaw: number; // ground_truth_raw
+    groundTruthBinary: number; // ground_truth_binary
+    predictionRaw: number; // prediction
+    aiConfidence: number; // ai_confidence (same as confidence, but explicit)
 }
 
 // Cache for the loaded data
@@ -19,18 +26,23 @@ const parseCSVLine = (line: string): AIPrediction | null => {
     const parts = line.split(',');
     if (parts.length < 18) return null; // Ensure we have enough columns
 
-    // NEW CSV Columns (header based):
-    // 0: image
-    // 4: ai_confidence (e.g. 0.9663)
+    // CSV Columns (header based):
+    // 0: image (e.g. "1.png")
+    // 4: ai_confidence (e.g. 0.3098)
+    // 5: ground_truth_raw (0-4)
+    // 6: ground_truth_binary (0 or 1)
     // 9: prediction (0 or 1)
     // 15: bbox_xmin_norm
     // 16: bbox_ymin_norm
     // 17: bbox_xmax_norm
     // 18: bbox_ymax_norm
 
-    const imageId = parts[0];
-    const probability = parseFloat(parts[4]); // Using ai_confidence
-    const predictionBin = parseInt(parts[9]);
+    const imageId = parts[0]; // "1.png"
+    const probability = parseFloat(parts[4]); // ai_confidence
+
+    const groundTruthRaw = parseInt(parts[5]);
+    const groundTruthBinary = parseInt(parts[6]);
+    const predictionRaw = parseInt(parts[9]);
 
     // BBox (normalized)
     const xmin = parseFloat(parts[15]);
@@ -42,6 +54,7 @@ const parseCSVLine = (line: string): AIPrediction | null => {
     const hasBox = (xmax > 0 || ymax > 0);
 
     // Construct paths
+    // Note: The ID in the CSV is "1.png", so we use that directly.
     const plainImagePath = `/dataset/no_map/${imageId}`;
     const finalHeatmapPath = `/dataset/map/${imageId}`;
 
@@ -49,7 +62,7 @@ const parseCSVLine = (line: string): AIPrediction | null => {
         id: imageId,
         imageName: plainImagePath,
         phase: 'phase1',
-        diagnosis: predictionBin === 1 ? 'igen' : 'nem',
+        diagnosis: predictionRaw === 1 ? 'igen' : 'nem',
         confidence: probability,
         box: hasBox ? {
             x: xmin,
@@ -57,7 +70,14 @@ const parseCSVLine = (line: string): AIPrediction | null => {
             width: xmax - xmin,
             height: ymax - ymin
         } : undefined, // Box is NORMALIZED (0-1)
-        heatmapPath: finalHeatmapPath
+        heatmapPath: finalHeatmapPath,
+
+        // New Metadata
+        originalImageName: parts[0], // "image" column
+        groundTruthRaw: !isNaN(groundTruthRaw) ? groundTruthRaw : -1,
+        groundTruthBinary: !isNaN(groundTruthBinary) ? groundTruthBinary : -1,
+        predictionRaw: !isNaN(predictionRaw) ? predictionRaw : -1,
+        aiConfidence: probability
     };
 };
 

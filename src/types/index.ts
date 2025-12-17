@@ -51,6 +51,16 @@ export interface TrialData {
     initialConfidence?: number;
     finalDiagnosis?: 'igen' | 'nem';
     finalConfidence?: number;
+
+    // Metadata from CSV
+    image?: string;
+    ai_confidence?: number;
+    ground_truth_raw?: number;
+    ground_truth_binary?: number;
+    prediction?: number;
+
+    // Timing
+    duration?: number; // Duration in seconds
 }
 
 export interface Box {
