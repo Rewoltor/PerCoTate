@@ -297,7 +297,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                 {/* Finding 1 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                                     <div className="flex items-center justify-between mb-2">
-                                        <label className="font-semibold text-gray-700">a. Csont sarkantyú (Osteofiták)</label>
+                                        <label className="font-semibold text-gray-700">a. Csontkinövések (Osteofiták)</label>
                                         <div className="h-3 w-3 rounded-full bg-emerald-500"></div>
                                     </div>
 
@@ -316,9 +316,9 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                         className="w-full p-2 border rounded mb-3 bg-white"
                                     >
                                         <option value="" disabled>-- Válassz --</option>
-                                        <option value="tunet">Tünet</option>
+                                        <option value="tunet">VanTünet</option>
                                         <option value="bizonytalan">Bizonytalan</option>
-                                        <option value="nincsen">Nincsen Tünet</option>
+                                        <option value="nincsen">Nincs Tünet</option>
                                     </select>
 
                                     {(symptom1 === 'tunet' || symptom1 === 'bizonytalan') && (
