@@ -4,10 +4,11 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
-// import type { TrialData } from '../../types';
+import type { TrialData } from '../../types';
 import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import { type Box } from '../../utils/math';
 import { BBoxTool, type ColoredBox } from '../common/BBoxTool';
+import { HelpTooltip } from '../common/HelpTooltip';
 import { AIFeedbackModal } from './AIFeedbackModal';
 import { PreConfidenceModal } from './PreConfidenceModal';
 
@@ -171,30 +172,33 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
         const trialId = `${trialIdPrefix}_${currentTrialIndex + 1}`;
         const endTime = Date.now();
 
-        const trialData: any = {
+        const trialData: TrialData = {
             trialId,
             imageName: `${imageId}.png`,
+            originalImageName: aiData.originalImageName,
             startTime,
             endTime,
             duration: (endTime - startTime) / 1000,
 
-            diagnosis: finalDiagnosis!,
-            confidence: conf,
+            // Responses - Mapped to 0/1 Schema
+            initialDecision: initialDiagnosis === 'igen' ? 1 : 0,
+            confidence: initialConfidence!, // Initial confidence
+
+            finalDecision: finalDiagnosis === 'igen' ? 1 : 0,
+            finalConfidence: conf,
 
             // New Data Fields
             symptom1,
             symptom2,
-            box1,
-            box2,
+            ...(box1 ? { box1 } : {}),
+            ...(box2 ? { box2 } : {}),
 
             revertedDecision: initialDiagnosis !== finalDiagnosis,
 
             aiShown: true,
 
-            initialDiagnosis: initialDiagnosis!,
+            // Interactions
             initialConfidence: initialConfidence!,
-            finalDiagnosis: finalDiagnosis!,
-            finalConfidence: conf,
 
             // requested Data Fields from CSV
             image: aiData.originalImageName || `${imageId}.png`,
@@ -292,7 +296,10 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
                             {/* Section 1: Findings */}
                             <div className="space-y-6">
-                                <h3 className="text-lg font-bold text-gray-900 border-b pb-2">1. Mit látsz?</h3>
+                                <h3 className="text-lg font-bold text-gray-900 border-b pb-2 flex items-center">
+                                    1. Mit látsz?
+                                    <HelpTooltip text="Jelölje ki a képen a gyanús területeket. Használja a 'Van Tünet' opciót ha biztos benne, vagy a 'Bizonytalan' opciót ha nem teljesen egyértelmű." align="left" position="bottom" />
+                                </h3>
 
                                 {/* Finding 1 */}
                                 <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
@@ -316,7 +323,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                         className="w-full p-2 border rounded mb-3 bg-white"
                                     >
                                         <option value="" disabled>-- Válassz --</option>
-                                        <option value="tunet">VanTünet</option>
+                                        <option value="tunet">Van Tünet</option>
                                         <option value="bizonytalan">Bizonytalan</option>
                                         <option value="nincsen">Nincs Tünet</option>
                                     </select>
@@ -363,7 +370,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                                         className="w-full p-2 border rounded mb-3 bg-white"
                                     >
                                         <option value="" disabled>-- Válassz --</option>
-                                        <option value="tunet">Tünet</option>
+                                        <option value="tunet">Van Tünet</option>
                                         <option value="bizonytalan">Bizonytalan</option>
                                         <option value="nincsen">Nincsen Tünet</option>
                                     </select>
@@ -391,7 +398,10 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
                             {/* Section 2: Diagnosis */}
                             <div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-3 border-b pb-2">2. Diagnózis</h3>
+                                <h3 className="text-lg font-bold text-gray-900 mb-3 border-b pb-2 flex items-center">
+                                    2. Diagnózis
+                                    <HelpTooltip text="Döntsön az alapján, hogy lát-e elváltozást a képen (pl. oszteofiták, ízületi rés beszűkülés). Válassza a Pozitív lehetőséget, ha tüneteket észlel, vagy Negatívat, ha nem." align="left" position="bottom" />
+                                </h3>
                                 <div className="flex gap-4">
                                     <button
                                         onClick={() => setInitialDiagnosis('igen')}

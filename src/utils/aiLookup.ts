@@ -73,7 +73,7 @@ const parseCSVLine = (line: string): AIPrediction | null => {
         heatmapPath: finalHeatmapPath,
 
         // New Metadata
-        originalImageName: parts[0], // "image" column
+        originalImageName: parts[2], // "image_name_original" column
         groundTruthRaw: !isNaN(groundTruthRaw) ? groundTruthRaw : -1,
         groundTruthBinary: !isNaN(groundTruthBinary) ? groundTruthBinary : -1,
         predictionRaw: !isNaN(predictionRaw) ? predictionRaw : -1,

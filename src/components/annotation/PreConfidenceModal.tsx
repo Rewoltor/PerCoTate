@@ -1,6 +1,7 @@
 
 import React, { useRef, useEffect } from 'react';
 import type { ColoredBox } from '../common/BBoxTool';
+import { HelpTooltip } from '../common/HelpTooltip';
 import type { Box } from '../../utils/math';
 
 interface PreConfidenceModalProps {
@@ -110,7 +111,10 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
                         </strong> diagnózist jelölted meg.
                     </p>
 
-                    <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire vagy biztos a döntésedben?</h3>
+                    <h3 className="text-lg font-bold mb-4 text-gray-700 flex items-center">
+                        Mennyire vagy biztos a döntésedben?
+                        <HelpTooltip text="Jelölje meg, mennyire biztos a döntésében egy 1-től (bizonytalan) 7-ig (teljesen biztos) terjedő skálán. Vegye figyelembe a tünetek egyértelműségét." align="right" />
+                    </h3>
                     <div className="grid grid-cols-7 gap-1 mb-2">
                         {[1, 2, 3, 4, 5, 6, 7].map(num => (
                             <button

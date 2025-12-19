@@ -33,31 +33,38 @@ export interface UserIdentity {
 
 export interface TrialData {
     trialId: string;
-    imageName: string;
+    imageName: string; // Web app filename (e.g. "1.png")
+    originalImageName: string; // Original filename (e.g. "82876L.png")
     startTime: number;
     endTime: number;
 
     // Responses
-    diagnosis: 'igen' | 'nem';
-    confidence: number; // 1-7
+    initialDecision: 0 | 1; // 0 = nem, 1 = igen
+    confidence: number; // 1-7 (Initial confidence)
 
     // AI-Specific
     aiShown?: boolean;
     boxDrawn?: boolean;
-    box?: Box; // Normalized or pixel? TBD by implementation
+    box?: Box;
 
     // Interaction states
-    initialDiagnosis?: 'igen' | 'nem';
     initialConfidence?: number;
-    finalDiagnosis?: 'igen' | 'nem';
+    finalDecision?: 0 | 1; // 0 = nem, 1 = igen
     finalConfidence?: number;
+    revertedDecision?: boolean;
 
     // Metadata from CSV
-    image?: string;
+    image?: string; // Legacy/Redundant? Keeping for CSV compatibility if needed, but originalImageName is primary
     ai_confidence?: number;
     ground_truth_raw?: number;
     ground_truth_binary?: number;
     prediction?: number;
+
+    // Data Fields (NoAITrial / AITrial common)
+    symptom1?: string;
+    symptom2?: string;
+    box1?: Box;
+    box2?: Box;
 
     // Timing
     duration?: number; // Duration in seconds

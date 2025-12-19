@@ -4,6 +4,7 @@ import { db } from '../../lib/firebase';
 import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
+import { HelpTooltip } from '../common/HelpTooltip';
 import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import type { TrialData } from '../../types';
 
@@ -101,10 +102,11 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
         const trialData: TrialData = {
             trialId,
             imageName: `${imageId}.png`, // Legacy field, mostly unused if we link by ID
+            originalImageName: aiData?.originalImageName || "",
             startTime,
             endTime,
             duration: (endTime - startTime) / 1000,
-            diagnosis,
+            initialDecision: diagnosis === 'igen' ? 1 : 0,
             confidence,
             aiShown: false,
 
@@ -192,7 +194,10 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                     <div className="space-y-6">
                         {/* 1. Diagnosis Decision - Now Step 1 */}
                         <div>
-                            <label className="block font-semibold mb-3 text-gray-700 text-lg">1. Diagnózis</label>
+                            <h3 className="flex items-center font-semibold mb-3 text-gray-700 text-lg">
+                                1. Diagnózis
+                                <HelpTooltip text="Döntsön az alapján, hogy lát-e elváltozást a képen (pl. oszteofiták, ízületi rés beszűkülés). Válassza a Pozitív lehetőséget, ha tüneteket észlel, vagy Negatívat, ha nem." align="left" position="bottom" />
+                            </h3>
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => setDiagnosis('igen')}
@@ -217,10 +222,12 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                             </div>
                         </div>
 
-                        {/* 2. Confidence Rating - Now Step 2 */}
                         {diagnosis && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <label className="block font-semibold mb-3 text-lg text-gray-700">2. Mennyire vagy biztos a diagnózisodban? (1-7)</label>
+                                <h3 className="flex items-center font-semibold mb-3 text-lg text-gray-700">
+                                    2. Mennyire vagy biztos a diagnózisban?
+                                    <HelpTooltip text="Jelölje meg, mennyire biztos a döntésében egy 1-től (bizonytalan) 7-ig (teljesen biztos) terjedő skálán. Vegye figyelembe a tünetek egyértelműségét." align="right" />
+                                </h3>
                                 <div className="grid grid-cols-7 gap-1">
                                     {[1, 2, 3, 4, 5, 6, 7].map(num => (
                                         <button

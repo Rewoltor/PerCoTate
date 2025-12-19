@@ -118,7 +118,7 @@ export const FinalCompletion: React.FC = () => {
                             onClick={debugSkipWashout}
                             className="w-full py-3 bg-red-100 text-red-700 font-bold rounded-xl hover:bg-red-200 transition-all border border-red-200 text-sm mt-4"
                         >
-                            [DEBUG] Ugrodd át a 28 napot (Simulate 30 Days Ago)
+                            [DEBUG] Ugordd át a 28 napot
                         </button>
                     )}
                 </div>

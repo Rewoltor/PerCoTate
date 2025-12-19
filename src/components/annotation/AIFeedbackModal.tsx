@@ -3,6 +3,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { calculateIoU } from '../../utils/math';
 import type { Box } from '../../utils/math';
 import type { ColoredBox } from '../common/BBoxTool';
+import { HelpTooltip } from '../common/HelpTooltip';
 
 interface AIFeedbackModalProps {
     imageSrc: string;
@@ -197,7 +198,10 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                 </div>
 
                                 <div className="mt-8">
-                                    <label className="block text-sm font-bold mb-2 text-gray-700">Végleges döntés:</label>
+                                    <label className="flex items-center text-sm font-bold mb-2 text-gray-700">
+                                        Végleges döntés:
+                                        <HelpTooltip text="Erősítse meg vagy módosítsa a diagnózisát az AI elemzésének megismerése után." align="right" />
+                                    </label>
                                     <select
                                         value={decision}
                                         onChange={(e) => setDecision(e.target.value as 'igen' | 'nem')}
@@ -227,7 +231,10 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                     Az Ön VÉGSŐ döntése: <strong className={decision === 'igen' ? 'text-red-600' : 'text-green-600'}>{decision.toUpperCase()}</strong>
                                 </p>
 
-                                <h3 className="text-lg font-bold mb-4 text-gray-700">Mennyire vagy biztos a döntésedben?</h3>
+                                <h3 className="text-lg font-bold mb-4 text-gray-700 flex items-center">
+                                    Mennyire vagy biztos a döntésedben?
+                                    <HelpTooltip text="Jelölje meg, mennyire biztos a végleges döntésében, miután figyelembe vette az AI visszajelzését. 1: Bizonytalan, 7: Teljesen biztos." align="right" />
+                                </h3>
 
                                 <div className="grid grid-cols-7 gap-1 mb-2">
                                     {[1, 2, 3, 4, 5, 6, 7].map(num => (
