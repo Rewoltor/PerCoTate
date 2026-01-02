@@ -100,8 +100,8 @@ export interface Big5Response {
 }
 
 export interface IQResponse {
-    answers: { [questionId: number]: number }; // ID -> OptionIndex (1-6)
-    questionOrder: number[];
+    answers: { [questionId: string]: string }; // ID -> Selected Option (A-H)
+    questionOrder: string[]; // Changed from number[] to string[] for IDs like "R3D.61"
     completedAt: number;
     timeRemaining: number;
     score?: number;
