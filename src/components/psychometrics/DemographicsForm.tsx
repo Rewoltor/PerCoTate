@@ -187,7 +187,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                             />
                         </div>
                         <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
-                            Megismertem és elfogadom a <a href="/terms.pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-800" onClick={(e) => e.stopPropagation()}>kutatási feltételeket</a>, valamint hozzájárulok az adataim névtelen, kutatási célú felhasználásához.
+                            Megismertem és elfogadom az <a href="/DataProtection.pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-800" onClick={(e) => e.stopPropagation()}>adatkezelési tájékoztatót</a>.
                         </label>
                     </div>
 
