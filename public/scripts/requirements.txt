@@ -1,0 +1,5 @@
+# Firebase Admin SDK for Firestore data export
+firebase-admin>=6.0.0
+
+# Data manipulation for CSV conversion
+pandas>=2.0.0

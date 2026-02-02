@@ -31,6 +31,14 @@ dist-ssr
 firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
+*firebase-adminsdk*.json
+
+# Python
+venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
 
 # Editor directories and files
 .vscode/*
