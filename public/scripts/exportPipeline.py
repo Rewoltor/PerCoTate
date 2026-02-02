@@ -89,7 +89,30 @@ class PipelineReport:
         print(f"Pipeline Duration: {duration:.1f} seconds")
 
 
-def run_stage_1_export(credentials_path, output_dir, verbose):
+def generate_run_id(outputs_dir):
+    """
+    Generate an incremental run ID with format: YYYY.MM.DD_HH:MM_N
+    Example: 2026.02.02_14:52_2
+    """
+    now = datetime.now()
+    base_str = now.strftime("%Y.%m.%d_%H:%M")
+    
+    json_dir = outputs_dir / 'json'
+    
+    # Check for existing run IDs
+    counter = 1
+    while True:
+        candidate = f"{base_str}_{counter}"
+        # Check against potential existing files/dirs using exact prefix
+        json_exists = list(json_dir.glob(f"firestore_export_{candidate}.json"))
+        csv_exists = (outputs_dir / 'csv' / f"export_{candidate}").exists()
+        
+        if not json_exists and not csv_exists:
+            return candidate
+        counter += 1
+
+
+def run_stage_1_export(credentials_path, output_path, verbose):
     """Stage 1: Export from Firestore."""
     stage_start = datetime.now()
     
@@ -98,7 +121,8 @@ def run_stage_1_export(credentials_path, output_dir, verbose):
             print(f"│ {msg:<60} │")
     
     try:
-        result = export_firestore(credentials_path, output_dir, progress_cb)
+        # Pass full file path
+        result = export_firestore(credentials_path, output_path, progress_cb)
         
         duration = (datetime.now() - stage_start).total_seconds()
         
@@ -179,14 +203,13 @@ def run_stage_2_verify_export(export_data, credentials_path, verbose):
         }
 
 
-def run_stage_3_csv_conversion(export_file, output_dir, verbose):
+def run_stage_3_csv_conversion(export_file, output_dir_path, verbose):
     """Stage 3: Convert JSON to CSV."""
     stage_start = datetime.now()
     
     try:
-        # Create timestamped output directory
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        csv_output_dir = Path(output_dir) / f"export_{timestamp}"
+        # We accept the fully qualified output directory path here
+        csv_output_dir = Path(output_dir_path)
         
         result = convert_firestore_to_csv(
             export_file,
@@ -274,10 +297,9 @@ def run_stage_4_verify_csv(csv_dir, export_file, export_data, verbose):
         }
 
 
-def save_detailed_report(stages, output_dir):
+def save_detailed_report(stages, output_dir, run_id):
     """Save detailed text report to file."""
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    report_path = Path(output_dir) / f"pipeline_report_{timestamp}.txt"
+    report_path = Path(output_dir) / f"pipeline_report_{run_id}.txt"
     
     report_path.parent.mkdir(parents=True, exist_ok=True)
     
@@ -285,6 +307,7 @@ def save_detailed_report(stages, output_dir):
         f.write("=" * 70 + "\n")
         f.write("FIREBASE EXPORT PIPELINE - DETAILED REPORT\n")
         f.write("=" * 70 + "\n\n")
+        f.write(f"Run ID: {run_id}\n")
         f.write(f"Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         
         for i, stage in enumerate(stages, 1):
@@ -311,9 +334,19 @@ def run_pipeline(args):
     # Configuration
     script_dir = Path(__file__).parent
     credentials_path = script_dir / 'config' / 'credentials' / 'percotate-firebase-adminsdk-fbsvc-435af6df84.json'
-    json_output_dir = script_dir / 'outputs' / 'json'
-    csv_output_base = script_dir / 'outputs' / 'csv'
-    reports_dir = script_dir / 'outputs' / 'reports'
+    outputs_dir = script_dir / 'outputs'
+    json_output_dir = outputs_dir / 'json'
+    csv_output_base = outputs_dir / 'csv'
+    reports_dir = outputs_dir / 'reports'
+    
+    # Generate Run ID
+    run_id = generate_run_id(outputs_dir)
+    if args.verbose:
+        print(f"Run ID: {run_id}")
+    
+    # Define paths
+    json_export_file = json_output_dir / f"firestore_export_{run_id}.json"
+    csv_output_dir = csv_output_base / f"export_{run_id}"
     
     # Pre-flight checks
     if not credentials_path.exists():
@@ -324,11 +357,12 @@ def run_pipeline(args):
     
     if args.dry_run:
         print("✓ Dry run mode - checking configuration only")
+        print(f"✓ Run ID: {run_id}")
         print(f"✓ Credentials found: {credentials_path}")
-        print(f"✓ Output directories configured:")
-        print(f"   - JSON: {json_output_dir}")
-        print(f"   - CSV: {csv_output_base}")
-        print(f"   - Reports: {reports_dir}")
+        print(f"✓ Planned Output:")
+        print(f"   - JSON: {json_export_file}")
+        print(f"   - CSV Dir: {csv_output_dir}")
+        print(f"   - Report: {reports_dir}/pipeline_report_{run_id}.txt")
         print("\n✓ All pre-flight checks passed!")
         return 0
     
@@ -340,7 +374,7 @@ def run_pipeline(args):
     # Stage 1: Firebase Export
     if not args.skip_export:
         reporter.print_stage_header(1, "Firebase Export")
-        stage1 = run_stage_1_export(str(credentials_path), str(json_output_dir), args.verbose)
+        stage1 = run_stage_1_export(str(credentials_path), str(json_export_file), args.verbose)
         reporter.print_stage_footer(stage1['success'], stage1['duration'])
         
         stage1['name'] = 'Firebase Export'
@@ -376,7 +410,8 @@ def run_pipeline(args):
     # Stage 3: CSV Conversion
     if not args.skip_csv and export_file:
         reporter.print_stage_header(3, "CSV Conversion")
-        stage3 = run_stage_3_csv_conversion(export_file, str(csv_output_base), args.verbose)
+        # Pass full directory path
+        stage3 = run_stage_3_csv_conversion(export_file, str(csv_output_dir), args.verbose)
         reporter.print_stage_footer(stage3['success'], stage3['duration'])
         
         stage3['name'] = 'CSV Conversion'
@@ -410,7 +445,7 @@ def run_pipeline(args):
     reporter.print_summary(all_success)
     
     # Save detailed report
-    report_path = save_detailed_report(reporter.stages, str(reports_dir))
+    report_path = save_detailed_report(reporter.stages, str(reports_dir), run_id)
     
     # Print output files
     print("📊 OUTPUT FILES:")

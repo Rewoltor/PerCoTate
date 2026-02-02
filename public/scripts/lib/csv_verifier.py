@@ -125,14 +125,29 @@ def verify_csv_file_structure(csv_path: Path, result: CSVVerificationResult) -> 
             result.pass_test()
     
     # Test 7: Check for duplicate rows (based on ID column)
-    id_column = get_id_column(filename, reader.fieldnames)
-    if id_column and id_column in reader.fieldnames:
-        ids = [row.get(id_column) for row in rows if row.get(id_column)]
+    fieldnames = reader.fieldnames or []
+    id_columns = get_id_columns(filename, fieldnames)
+    if id_columns:
+        # Create composite key tuple
+        ids = []
+        for row in rows:
+            key_parts = []
+            has_val = False
+            for col in id_columns:
+                val = row.get(col)
+                if val:
+                    has_val = True
+                key_parts.append(val)
+            
+            # Only count if at least one part of key is present
+            if has_val:
+                ids.append(tuple(key_parts))
+                
         unique_ids = set(ids)
         
         if len(ids) != len(unique_ids):
             duplicates = len(ids) - len(unique_ids)
-            result.add_issue(f"{csv_path.name}: {duplicates} duplicate row(s) found")
+            result.add_issue(f"{csv_path.name}: {duplicates} duplicate row(s) found (keys: {id_columns})")
             file_detail['duplicate_rows'] = duplicates
         else:
             file_detail['no_duplicates'] = True
@@ -161,34 +176,39 @@ def get_required_columns(filename: str) -> List[str]:
     return required_by_file.get(filename, [])
 
 
-def get_id_column(filename: str, columns: List[str]) -> Optional[str]:
+def get_id_columns(filename: str, columns: List[str]) -> List[str]:
     """
-    Determine the ID column for duplicate checking.
+    Determine the ID columns for duplicate checking.
     
     Args:
         filename: Name of the CSV file (without extension)
         columns: List of column names in the file
         
     Returns:
-        Name of the ID column, or None
+        List of columns forming the unique key
     """
+    if filename == 'participants':
+        # Composite key for participants: participant_id + trial_id
+        # (Since trial IDs like 'trial_1' might repeat across participants)
+        keys = ['participant_id', 'trial_id']
+        if all(k in columns for k in keys):
+            return keys
+            
     id_columns_by_file = {
-        'participants': 'trial_id',  # For flattened participants with trials
-        'system_stats': 'document_id',
-        'user_identity': 'document_id',
+        'system_stats': ['document_id'],
+        'user_identity': ['document_id'],
     }
     
-    preferred_id = id_columns_by_file.get(filename)
+    preferred_ids = id_columns_by_file.get(filename)
+    if preferred_ids and all(k in columns for k in preferred_ids):
+        return preferred_ids
     
-    if preferred_id and preferred_id in columns:
-        return preferred_id
-    
-    # Fallback to common ID columns
-    for col in ['participant_id', 'document_id', 'id', 'user_id']:
+    # Fallback to single ID columns
+    for col in ['document_id', 'id', 'user_id', 'participant_id']:
         if col in columns:
-            return col
+            return [col]
     
-    return None
+    return []
 
 
 def verify_row_counts(

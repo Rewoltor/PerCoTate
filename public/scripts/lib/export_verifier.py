@@ -105,15 +105,9 @@ def verify_export_completeness(
     if progress_callback:
         progress_callback("Connecting to Firestore for verification...")
     
-    # Initialize Firebase (delete existing app if any)
-    try:
-        firebase_admin.delete_app(firebase_admin.get_app())
-    except ValueError:
-        pass
-    
-    cred = credentials.Certificate(str(credentials_path))
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
+    # Initialize Firebase using shared utility
+    from firebase_utils import init_firebase
+    db = init_firebase(str(credentials_path))
     
     # Get collection names
     export_collections = export_data.get('collections', {})

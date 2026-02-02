@@ -48,15 +48,15 @@ Each stage includes rigorous testing and reports results in real-time.
 ```
 outputs/
 ├── json/
-│   └── firestore_export_YYYYMMDD_HHMMSS.json
+│   └── firestore_export_YYYY.MM.DD_HH:MM_N.json
 ├── csv/
-│   └── export_YYYYMMDD_HHMMSS/
+│   └── export_YYYY.MM.DD_HH:MM_N/
 │       ├── participants.csv
 │       ├── system_stats.csv
 │       ├── user_identity.csv
 │       └── export_metadata.csv
 └── reports/
-    └── pipeline_report_YYYYMMDD_HHMMSS.txt
+    └── pipeline_report_YYYY.MM.DD_HH:MM_N.txt
 ```
 
 ## Command-Line Options
@@ -100,15 +100,15 @@ One row per trial, with participant data repeated for each trial:
 ║         FIREBASE EXPORT PIPELINE - EXECUTION REPORT          ║
 ╚══════════════════════════════════════════════════════════════╝
 
-Pipeline Started: 2026-02-02 10:28:41
+Pipeline Started: 2026-02-02 11:02:51
 
 ┌──────────────────────────────────────────────────────────────┐
 │ STAGE 1: FIREBASE EXPORT                              [✓PASS]│
 ├──────────────────────────────────────────────────────────────┤
 │ Collections Exported: 3                                       │
-│ Output File: firestore_export_20260202_102841.json           │
-│ File Size: 20.4 KB                                            │
-│ Status: [✓PASS]         Duration: 8.5s                       │
+│ Output File: firestore_export_2026.02.02_11:02_1.json        │
+│ File Size: 32.0 KB                                            │
+│ Status: [✓PASS]         Duration: 3.5s                       │
 └──────────────────────────────────────────────────────────────┘
 
 ... [more stages]

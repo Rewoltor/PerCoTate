@@ -106,7 +106,7 @@ def export_collection(
 
 def export_firestore(
     credentials_path: str,
-    output_dir: str,
+    output_path: str,
     progress_callback: Optional[Callable] = None
 ) -> Dict[str, Any]:
     """
@@ -114,35 +114,25 @@ def export_firestore(
     
     Args:
         credentials_path: Path to Firebase Admin SDK credentials JSON
-        output_dir: Directory to save the export file
+        output_path: Directory or full path to save the export file
         progress_callback: Optional callback for progress updates
         
     Returns:
         Dictionary containing export results and file path
-        
-    Raises:
-        FileNotFoundError: If credentials file doesn't exist
-        Exception: If Firebase initialization or export fails
     """
     credentials_path = Path(credentials_path)
-    output_dir = Path(output_dir)
+    output_target = Path(output_path)
     
     if not credentials_path.exists():
         raise FileNotFoundError(f"Credentials file not found: {credentials_path}")
     
-    # Initialize Firebase
+    # Initialize Firebase using shared utility
+    from firebase_utils import init_firebase
+    
     if progress_callback:
         progress_callback("Initializing Firebase Admin SDK...")
     
-    # Check if already initialized
-    try:
-        firebase_admin.delete_app(firebase_admin.get_app())
-    except ValueError:
-        pass  # Not initialized yet
-    
-    cred = credentials.Certificate(str(credentials_path))
-    firebase_admin.initialize_app(cred)
-    db = firestore.client()
+    db = init_firebase(str(credentials_path))
     
     if progress_callback:
         progress_callback("Connected to Firestore")
@@ -190,10 +180,15 @@ def export_firestore(
         "collections": firestore_data
     }
     
-    # Save to file
-    output_dir.mkdir(parents=True, exist_ok=True)
-    timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
-    output_file = output_dir / f"firestore_export_{timestamp_str}.json"
+    # Determine output file path
+    if output_target.suffix == '.json':
+        output_file = output_target
+        output_file.parent.mkdir(parents=True, exist_ok=True)
+    else:
+        # It's a directory
+        output_target.mkdir(parents=True, exist_ok=True)
+        timestamp_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+        output_file = output_target / f"firestore_export_{timestamp_str}.json"
     
     if progress_callback:
         progress_callback(f"Saving export to: {output_file}")

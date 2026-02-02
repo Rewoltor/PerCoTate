@@ -40,7 +40,7 @@ def flatten_participant_with_trials(participant_id: str, participant_data: Dict[
     }
     
     # Add demographics if present
-    demographics = participant_data.get('demographics', {})
+    demographics = participant_data.get('demographics') or {}
     if demographics:
         base_data.update({
             'age': demographics.get('age'),
@@ -52,7 +52,7 @@ def flatten_participant_with_trials(participant_id: str, participant_data: Dict[
         })
     
     # Add Big5 personality data if present
-    big5 = participant_data.get('big5', {})
+    big5 = participant_data.get('big5') or {}
     if big5:
         # Calculated traits
         traits = big5.get('calculatedTraits', {})
@@ -87,7 +87,7 @@ def flatten_participant_with_trials(participant_id: str, participant_data: Dict[
         base_data['big5_timestamp'] = big5.get('timestamp')
     
     # Add IQ test data if present
-    iq = participant_data.get('iq', {})
+    iq = participant_data.get('iq') or {}
     if iq:
         base_data.update({
             'iq_score': iq.get('score'),
