@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import type { IQResponse } from '../../types';
+import { HelpTooltip } from '../ui/HelpTooltip';
 
 interface IQTestProps {
     onComplete: () => void;
@@ -146,7 +147,20 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
             <Card className="max-w-[98vw] w-full flex flex-col h-[98vh] lg:h-auto max-h-[1400px]">
                 {/* Header */}
                 <div className="flex justify-between items-center px-4 py-2 border-b border-gray-100 shrink-0">
-                    <h2 className="text-xl font-bold text-gray-900">Térbeli Logika Teszt</h2>
+                    <div className="flex items-center gap-3">
+                        <h2 className="text-xl font-bold text-gray-900">Térbeli Logika Teszt</h2>
+                        <HelpTooltip
+                            align="left"
+                            content={
+                                <span className="block space-y-2">
+                                    <p><strong>Feladat leírása</strong></p>
+                                    <p>A bal oldali képen egy kocka látható. Az Ön feladata kitalálni, hogy ha ezt a kockát elforgatnánk, hogyan nézne ki.</p>
+                                    <p>A jobb oldali lehetőségek közül válassza ki azt az <strong>egyetlen</strong> képet, amely a bal oldali kocka egy lehetséges nézete.</p>
+                                    <p className="mt-2 text-blue-600 font-medium">Tipp: Figyeljen a minták egymáshoz viszonyított helyzetére!</p>
+                                </span>
+                            }
+                        />
+                    </div>
                     <div className="flex items-center gap-6">
                         <div className="flex flex-col items-end">
                             <span className="text-xs text-gray-400 font-semibold uppercase tracking-wider">Haladás</span>
@@ -165,7 +179,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                 {/* Progress Line */}
                 <div className="h-1 w-full bg-gray-100 shrink-0">
                     <div
-                        className="h-full bg-teal-600 transition-all duration-500 ease-out"
+                        className="h-full bg-blue-600 transition-all duration-500 ease-out"
                         style={{ width: `${((currentIndex + 1) / rawQuestions.length) * 100}%` }}
                     />
                 </div>
@@ -203,7 +217,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                                                 relative h-10 rounded-lg transition-all duration-200 border
                                                 flex items-center justify-center font-bold text-base
                                                 ${selectedOption === optLabel
-                                                    ? 'border-teal-600 bg-teal-50 text-teal-700 shadow-sm ring-1 ring-teal-600'
+                                                    ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-600'
                                                     : 'border-gray-200 text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                                                 }
                                             `}
@@ -218,7 +232,7 @@ export const IQTest: React.FC<IQTestProps> = ({ onComplete }) => {
                                 <Button
                                     onClick={handleNext}
                                     disabled={!selectedOption}
-                                    className="w-full py-4 text-lg bg-teal-600 hover:bg-teal-700 text-white"
+                                    className="w-full py-4 text-lg bg-blue-600 hover:bg-blue-700 text-white"
                                 >
                                     {currentIndex === rawQuestions.length - 1 ? 'Teszt Befejezése' : 'Következő'}
                                 </Button>

@@ -6,6 +6,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Card } from '../ui/Card';
 import { Button } from '../ui/Button';
 import type { Big5Response } from '../../types';
+import { HelpTooltip } from '../ui/HelpTooltip';
 
 interface Big5TestProps {
     onComplete: () => void;
@@ -236,9 +237,24 @@ export const Big5Test: React.FC<Big5TestProps> = ({ onComplete }) => {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <Card title="Személyiségteszt (BFI-2)" className="max-w-3xl w-full">
-                <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm">
-                    Kérjük, jelölje meg, mennyire jellemző Önre az alábbi állítás. <br />
-                    <strong>1 = Határozottan nem értek egyet</strong> ... <strong>5 = Határozottan egyetértek</strong>
+                <div className="mb-6 bg-blue-50 p-4 rounded-xl border border-blue-100 text-blue-800 text-sm flex justify-between items-start gap-4">
+                    <div>
+                        Kérjük, jelölje meg, mennyire jellemző Önre az alábbi állítás. <br />
+                        <strong>1 = Határozottan nem értek egyet</strong> ... <strong>5 = Határozottan egyetértek</strong>
+                    </div>
+                    <HelpTooltip
+                        content={
+                            <span className="block space-y-2">
+                                <p><strong>Hogyan töltse ki?</strong></p>
+                                <p>Minden állításnál válassza ki azt a számot, amelyik a legjobban kifejezi, mennyire jellemző Önre az adott tulajdonság.</p>
+                                <ul className="list-disc pl-4 space-y-1 mt-2">
+                                    <li><strong>1</strong>: Egyáltalán nem jellemző</li>
+                                    <li><strong>5</strong>: Teljes mértékben jellemző</li>
+                                </ul>
+                                <p className="mt-2 text-blue-600 font-medium">Nincsenek jó vagy rossz válaszok, a spontán véleménye számít!</p>
+                            </span>
+                        }
+                    />
                 </div>
 
                 <div className="space-y-8">
