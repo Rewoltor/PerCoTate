@@ -53,3 +53,57 @@ __pycache__/
 
 # Reference Code
 DANNY-redo/
+
+# ============================================================================
+# PROPRIETARY COGNITIVE TEST ASSETS
+# ============================================================================
+# This section excludes closed-source IQ test materials based on the ICAR
+# project (International Cognitive Ability Resource). These materials contain
+# proprietary test questions, images, and scoring logic.
+#
+# For access to these materials, please visit: https://icar-project.com/
+#
+# To configure your own cognitive tests:
+# 1. Replace the assets in public/CognitiveAssets/ with your test materials
+# 2. Update src/components/psychometrics/IQTest.tsx with your test logic
+# 3. Uncomment the lines below if you want to track your custom assets
+# ============================================================================
+
+# Cognitive test images and assets (ICAR-based proprietary content)
+public/CognitiveAssets/
+# Uncomment below to track your own cognitive assets:
+# !public/CognitiveAssets/README.md
+
+# IQ test implementation with correct answers (closed-source)
+src/components/psychometrics/IQTest.tsx
+# Uncomment below to track your own IQ test implementation:
+# !src/components/psychometrics/IQTest.tsx
+
+# ============================================================================
+# ADDITIONAL SECURITY & SENSITIVE FILES
+# ============================================================================
+# Ensure all potentially sensitive files are excluded from version control
+
+# Service account keys and credentials
+*serviceAccountKey*.json
+*service-account*.json
+*-adminsdk-*.json
+
+# Local database exports and backups
+*.sql
+*.sqlite
+*.db
+/data/
+/backups/
+/exports/
+
+# Temporary and generated data files
+*.tmp
+*.temp
+*.bak
+*.swp
+*~
+
+# OS-specific files
+Thumbs.db
+Desktop.ini

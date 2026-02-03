@@ -112,7 +112,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
 
                     {/* School - New Dropdown */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Iskolai végzettség vagy amibe jársz</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Legmagasabb iskolai végzettség vagy amibe jársz</label>
                         <select
                             value={formData.school}
                             onChange={(e) => setFormData({ ...formData, school: e.target.value })}
@@ -164,11 +164,8 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                             disabled={submitting}
                         >
                             <option value="">-- Válasszon --</option>
-                            <option value="none">Nincsen semmilyen</option>
-                            <option value="student_4-6">Orvostanhallgató</option>
-                            <option value="resident">Rezidens</option>
-                            <option value="specialist">Szakorvos</option>
-                            <option value="other">Egyéb egészségügyi végzettség</option>
+                            <option value="none">Nincsen</option>
+                            <option value="yes">Van</option>
                         </select>
                     </div>
 
