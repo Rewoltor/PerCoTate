@@ -1,5 +1,5 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Flame, Zap, Image as ImageIcon } from 'lucide-react';
 import { calculateIoU } from '../../utils/math';
 import type { Box } from '../../utils/math';
 import type { ColoredBox } from '../common/BBoxTool';
@@ -33,7 +33,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
 }) => {
         const [decision, setDecision] = useState<'igen' | 'nem'>(initialDecision || aiPrediction);
         const [mode, setMode] = useState<'review' | 'rate'>('review'); // Internal mode switching
-        const [showHeatmap, setShowHeatmap] = useState(true);
+        const [viewMode, setViewMode] = useState<'heatmap' | 'ai' | 'original'>('heatmap');
         const [symptomIoUs, setSymptomIoUs] = useState<Record<string, number>>({});
 
         const imgRef = useRef<HTMLImageElement>(null);
@@ -109,7 +109,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
             }
 
             // Draw Only
-            if (aiBoxPixels && !showHeatmap) {
+            if (aiBoxPixels && viewMode === 'ai') {
                 drawBox(aiBoxPixels, 'rgba(255, 0, 0, 0.9)', 'AI');
             }
 
@@ -131,7 +131,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                 img.removeEventListener('load', handleLoad);
                 window.removeEventListener('resize', drawOverlay);
             };
-        }, [userBoxes, aiBox, showHeatmap]); // calculatedIoU excluded to prevent loop
+        }, [userBoxes, aiBox, viewMode]); // calculatedIoU excluded to prevent loop
 
         return (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
@@ -142,7 +142,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                         <div className="relative max-w-full max-h-full inline-block">
                             <img
                                 ref={imgRef}
-                                src={showHeatmap && heatmapPath ? heatmapPath : imageSrc}
+                                src={viewMode === 'heatmap' && heatmapPath ? heatmapPath : imageSrc}
                                 alt="Feedback"
                                 className="max-h-full max-w-full object-contain block"
                                 style={{ maxHeight: '568px' }}
@@ -164,14 +164,37 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                     <h2 className="text-xl font-bold mb-4">AI Elemzés</h2>
 
                                     {/* Heatmap Toggle */}
+                                    {/* View Selector (Heatmap | AI | Original) */}
+                                    {/* View Selector (Circular Toggle Button) */}
                                     {heatmapPath && (
                                         <button
-                                            onClick={() => setShowHeatmap(!showHeatmap)}
-                                            className={`w-full py-2 px-4 rounded-lg bg-white border-2 border-gray-200 hover:bg-gray-50 flex items-center justify-center gap-2 font-medium transition-colors mb-6
-                                                ${showHeatmap ? 'border-blue-500 text-blue-600' : 'text-gray-600'}`}
+                                            onClick={() => {
+                                                setViewMode((prev) => {
+                                                    if (prev === 'heatmap') return 'ai';
+                                                    if (prev === 'ai') return 'original';
+                                                    return 'heatmap';
+                                                });
+                                            }}
+                                            className="w-full bg-gray-100 p-1.5 rounded-full flex items-center justify-between relative shadow-inner mb-6 hover:bg-gray-200/80 transition-colors cursor-pointer group"
+                                            title="Kattintson a nézet váltásához"
                                         >
-                                            {showHeatmap ? <EyeOff size={20} /> : <Eye size={20} />}
-                                            {showHeatmap ? 'Eredeti Kép' : 'Hőtérkép Mutatása'}
+                                            {/* Heatmap Icon */}
+                                            <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
+                                                ${viewMode === 'heatmap' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
+                                                <Flame size={20} className={`transition-colors duration-300 ${viewMode === 'heatmap' ? 'text-orange-500 fill-orange-500/20' : 'text-gray-500'}`} />
+                                            </div>
+
+                                            {/* AI Analysis Icon */}
+                                            <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
+                                                ${viewMode === 'ai' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
+                                                <Zap size={20} className={`transition-colors duration-300 ${viewMode === 'ai' ? 'text-violet-600 fill-violet-600/20' : 'text-gray-500'}`} />
+                                            </div>
+
+                                            {/* Original Image Icon */}
+                                            <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
+                                                ${viewMode === 'original' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
+                                                <ImageIcon size={20} className={`transition-colors duration-300 ${viewMode === 'original' ? 'text-blue-500' : 'text-gray-500'}`} />
+                                            </div>
                                         </button>
                                     )}
 
