@@ -23,6 +23,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
         healthcareQualification: '',
     });
     const [ageInput, setAgeInput] = useState('');
+    const [ageTouched, setAgeTouched] = useState(false);
     const [submitting, setSubmitting] = useState(false);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [showErrors, setShowErrors] = useState(false);
@@ -31,12 +32,15 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
         e.preventDefault();
         setShowErrors(true);
 
+        const ageNum = parseInt(ageInput, 10);
+        const isAgeValid = !isNaN(ageNum) && ageNum >= 12 && ageNum <= 99;
+
         const isValid = user &&
             formData.gender &&
             formData.school &&
             formData.residence &&
             formData.healthcareQualification &&
-            ageInput &&
+            isAgeValid &&
             termsAccepted;
 
         if (!isValid) return;
@@ -44,7 +48,7 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
         setSubmitting(true);
         try {
             const demographics: Demographics = {
-                age: parseInt(ageInput, 10),
+                age: ageNum,
                 gender: formData.gender!,
                 school: formData.school!,
                 residence: formData.residence!,
@@ -65,7 +69,9 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
             setSubmitting(false);
         }
     };
-    // ... rest of component
+
+    // Helper for render logic
+    const isAgeValid = !isNaN(parseInt(ageInput, 10)) && parseInt(ageInput, 10) >= 12 && parseInt(ageInput, 10) <= 99;
 
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
@@ -78,17 +84,27 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                         <input
                             type="number"
                             value={ageInput}
-                            onChange={(e) => setAgeInput(e.target.value)}
-                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg ${showErrors && !ageInput
+                            onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.length > 2) return;
+                                setAgeInput(val);
+                            }}
+                            onBlur={() => setAgeTouched(true)}
+                            className={`w-full p-4 rounded-xl border-2 outline-none transition-all text-lg ${(showErrors || ageTouched) && ageInput !== '' && !isAgeValid
                                 ? 'border-red-500 bg-red-50 ring-1 ring-red-500'
                                 : 'border-gray-200 focus:border-blue-500 focus:ring-1 focus:ring-blue-500'
                                 }`}
                             placeholder="pl. 24"
                             required
-                            min="18"
+                            min="12"
                             max="99"
                             disabled={submitting}
                         />
+                        {(showErrors || ageTouched) && ageInput !== '' && !isAgeValid && (
+                            <p className="text-red-600 text-sm mt-2 animate-in slide-in-from-top-1 font-medium">
+                                ⚠️ Kérjük, adjon meg egy 12 és 99 év közötti értéket.
+                            </p>
+                        )}
                     </div>
 
                     {/* Gender */}
@@ -170,20 +186,18 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                     </div>
 
                     {/* Terms Checkbox */}
-                    <div className={`flex items-start gap-4 p-4 rounded-xl border-2 transition-all ${showErrors && !termsAccepted
-                        ? 'border-red-500 bg-red-50'
-                        : 'border-gray-200 hover:border-blue-200'
+                    <div className={`flex items-center gap-3 p-4 rounded-xl transition-all ${showErrors && !termsAccepted
+                        ? 'border-2 border-red-500 bg-red-50'
+                        : ''
                         }`}>
-                        <div className="flex items-start pt-1">
-                            <input
-                                type="checkbox"
-                                id="terms"
-                                checked={termsAccepted}
-                                onChange={(e) => setTermsAccepted(e.target.checked)}
-                                className="w-5 h-5 accent-blue-600 cursor-pointer"
-                            />
-                        </div>
-                        <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer select-none leading-relaxed">
+                        <input
+                            type="checkbox"
+                            id="terms"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            className="w-5 h-5 accent-blue-600 cursor-pointer shrink-0"
+                        />
+                        <label htmlFor="terms" className="text-sm text-gray-700 cursor-pointer select-none font-medium">
                             Megismertem és elfogadom az <a href="/DataProtection.pdf" target="_blank" rel="noopener noreferrer" className="text-blue-600 underline font-semibold hover:text-blue-800" onClick={(e) => e.stopPropagation()}>adatkezelési tájékoztatót</a>.
                         </label>
                     </div>
@@ -197,6 +211,6 @@ export const DemographicsForm: React.FC<DemographicsFormProps> = ({ onComplete }
                     </Button>
                 </form>
             </Card>
-        </div>
+        </div >
     );
 };
