@@ -10,6 +10,26 @@ interface IntroPageProps {
     icon?: React.ReactNode;
 }
 
+// Simple function to parse markdown-style bold text
+const parseDescription = (text: string) => {
+    const lines = text.split('\n');
+    return lines.map((line, index) => {
+        // Check if line contains bold markdown
+        if (line.includes('**')) {
+            const parts = line.split('**');
+            return (
+                <p key={index} className="mb-2">
+                    {parts.map((part, i) =>
+                        i % 2 === 1 ? <strong key={i} className="font-semibold text-gray-800">{part}</strong> : part
+                    )}
+                </p>
+            );
+        }
+        // Regular line
+        return line.trim() ? <p key={index} className="mb-2">{line}</p> : <br key={index} />;
+    });
+};
+
 export const IntroPage: React.FC<IntroPageProps> = ({
     title,
     description,
@@ -24,8 +44,8 @@ export const IntroPage: React.FC<IntroPageProps> = ({
 
                 <h1 className="text-3xl font-bold text-gray-900 mb-6">{title}</h1>
 
-                <div className="prose prose-lg mx-auto text-gray-600 mb-10 leading-relaxed whitespace-pre-line">
-                    {description}
+                <div className="prose prose-lg mx-auto text-gray-600 mb-10 leading-relaxed text-left">
+                    {parseDescription(description)}
                 </div>
 
                 <Button

@@ -51,10 +51,31 @@ const App: React.FC = () => {
 
               <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="intro-big5" />} />
 
-              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description="Válaszolj őszintén az alábbi állításokra! Nincsenek helyes vagy helytelen válaszok." buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
+              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`A következő kérdőív az ún. Big Five személyiségtesztet tartalmazza, amely a személyiségpszichológia egyik legmegbízhatóbb és legszélesebb körben alkalmazott mérőeszköze.
+
+                **Mit mér a teszt?**
+                Öt alapvető személyiségdimenziót: nyitottság, lelkiismeretesség, extraverzió, barátságosság és érzelmi stabilitás.
+
+                **Hogyan töltsd ki?**
+                • Olvasd el figyelmesen az állításokat
+                • Válaszolj őszintén, spontán módon
+                • Nincsenek jó vagy rossz válaszok
+                • Körülbelül 5-10 percet vesz igénybe
+
+                **Miért fontos?**
+                A személyiségjellemzők segítenek megérteni, hogyan dolgoznak az emberek különböző helyzetekben. 
+                `} buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
               <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="intro-iq" />} />
 
-              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészíteni." buttonText="Teszt Indítása" />} nextPath="iq" />} />
+              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description={`A következő feladatban logikai sorozatokat kell kiegészíteni.
+
+**Mit mér a teszt?**
+• Logikai sorozatokat kell kiegészíteni
+• Nincsenek jó vagy rossz válaszok
+• Körülbelül 5-10 percet vesz igénybe
+
+**Miért fontos?**
+`} buttonText="Teszt Indítása" />} nextPath="iq" />} />
               <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
 
               <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Oktatóvideó" description="A következő lépésben egy rövid videót fogsz látni, amely bemutatja a feladatot." buttonText="Videó Indítása" />} nextPath="video" />} />
@@ -89,7 +110,19 @@ const App: React.FC = () => {
             <Route path="group1">
               <Route path="landing" element={<Phase2LandingPage />} />
 
-              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description="Válaszolj őszintén az alábbi állításokra! Nincsenek helyes vagy helytelen válaszok." buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
+              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`A következő kérdőív az ún. Big Five személyiségtesztet tartalmazza, amely a személyiségpszichológia egyik legmegbízhatóbb és legszélesebb körben alkalmazott mérőeszköze.
+
+**Mit mér a teszt?**
+Öt alapvető személyiségdimenziót: nyitottság, lelkiismeretesség, extraverzió, barátságosság és érzelmi stabilitás.
+
+**Hogyan töltsd ki?**
+• Olvasd el figyelmesen az állításokat
+• Válaszolj őszintén, spontán módon
+• Nincsenek jó vagy rossz válaszok
+• Körülbelül 5-10 percet vesz igénybe
+
+**Miért fontos?**
+A személyiségjellemzők segítenek megérteni, hogyan dolgoznak az emberek különböző helyzetekben. Az adataid anonim módon kerülnek feldolgozásra és kizárólag tudományos célokat szolgálnak.`} buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
               <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="intro-iq" />} />
 
               <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészíteni." buttonText="Teszt Indítása" />} nextPath="iq" />} />
