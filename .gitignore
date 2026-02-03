@@ -72,12 +72,15 @@ DANNY-redo/
 # Cognitive test images and assets (ICAR-based proprietary content)
 public/CognitiveAssets/
 # Uncomment below to track your own cognitive assets:
-# !public/CognitiveAssets/README.md
+!public/CognitiveAssets/README.md
 
-# IQ test implementation with correct answers (closed-source)
-src/components/psychometrics/IQTest.tsx
-# Uncomment below to track your own IQ test implementation:
-# !src/components/psychometrics/IQTest.tsx
+# Medical Dataset (Knee Osteoarthritis Severity Grading Dataset)
+public/dataset/
+# Uncomment below to track the dataset documentation:
+!public/dataset/README.md
+
+# Sensitive Documents
+public/DataProtection.pdf
 
 # ============================================================================
 # ADDITIONAL SECURITY & SENSITIVE FILES

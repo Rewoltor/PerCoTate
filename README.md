@@ -150,6 +150,24 @@ If you don't need IQ testing:
 
 ---
 
+## 🧪 Data Extraction Pipeline
+
+The project includes a complete data extraction and processing pipeline located in `public/scripts/`.
+
+- **Location**: `public/scripts/`
+- **Purpose**: Processes raw medical experiment data and handles dataset management.
+- **Language**: Python
+
+## 🩻 Medical Dataset
+
+This research utilizes the **Knee Osteoarthritis Severity Grading Dataset**.
+
+**Citation**:
+> Pingjun Chen. 2018. Knee osteoarthritis severity grading dataset. Mendeley Data 1 (2018).
+> [https://data.mendeley.com/datasets/56rmx5bjcr/1](https://data.mendeley.com/datasets/56rmx5bjcr/1)
+
+*Note: The actual image dataset is not included in this repository due to size and licensing. Please download it from the source above if needed.*
+
 ## 📦 Available Scripts
 
 | Command | Description |
