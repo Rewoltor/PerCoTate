@@ -71,10 +71,9 @@ const App: React.FC = () => {
 
 **Mit mér a teszt?**
 • Logikai sorozatokat kell kiegészíteni
-• Nincsenek jó vagy rossz válaszok
+• Válaszd ki azt a képet, amelyik a bal oldali kocka lehetséges elforgatása
 • Körülbelül 5-10 percet vesz igénybe
 
-**Miért fontos?**
 `} buttonText="Teszt Indítása" />} nextPath="iq" />} />
               <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
 
