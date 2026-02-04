@@ -109,13 +109,15 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
             }
 
             // Draw Only
-            if (aiBoxPixels && viewMode === 'ai') {
-                drawBox(aiBoxPixels, 'rgba(255, 0, 0, 0.9)', 'AI');
-            }
+            if (viewMode !== 'original') {
+                if (aiBoxPixels && viewMode === 'ai') {
+                    drawBox(aiBoxPixels, 'rgba(255, 0, 0, 0.9)', 'AI');
+                }
 
-            userBoxes.forEach(b => {
-                drawBox(b.box, b.color, b.label || '');
-            });
+                userBoxes.forEach(b => {
+                    drawBox(b.box, b.color, b.label || '');
+                });
+            }
         };
 
         useEffect(() => {
