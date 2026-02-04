@@ -106,9 +106,9 @@ export const PreConfidenceModal: React.FC<PreConfidenceModalProps> = ({
                 <div className="w-1/3 p-8 flex flex-col justify-center bg-gray-50">
                     <h2 className="text-3xl font-bold mb-4 text-gray-800">Első Döntés</h2>
                     <p className="text-gray-600 mb-8 text-lg">
-                        <strong className={activeDiagnosis === 'nem' ? 'text-green-600' : 'text-red-600'}>
-                            {activeDiagnosis.toUpperCase()}
-                        </strong> diagnózist jelölted meg.
+                        <span className="bg-gray-900 text-white px-2 py-1 rounded font-bold">
+                            {activeDiagnosis === 'igen' ? 'Pozitív' : 'Negatív'}
+                        </span> diagnózist jelölted meg.
                     </p>
 
                     <h3 className="text-lg font-bold mb-4 text-gray-700 flex items-center">

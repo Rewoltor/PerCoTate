@@ -183,19 +183,19 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                             {/* Heatmap Icon */}
                                             <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
                                                 ${viewMode === 'heatmap' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
-                                                <Flame size={20} className={`transition-colors duration-300 ${viewMode === 'heatmap' ? 'text-orange-500 fill-orange-500/20' : 'text-gray-500'}`} />
+                                                <Flame size={20} className={`transition-colors duration-300 ${viewMode === 'heatmap' ? 'text-gray-900' : 'text-gray-500'}`} />
                                             </div>
 
                                             {/* AI Analysis Icon */}
                                             <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
                                                 ${viewMode === 'ai' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
-                                                <Zap size={20} className={`transition-colors duration-300 ${viewMode === 'ai' ? 'text-violet-600 fill-violet-600/20' : 'text-gray-500'}`} />
+                                                <Zap size={20} className={`transition-colors duration-300 ${viewMode === 'ai' ? 'text-gray-900' : 'text-gray-500'}`} />
                                             </div>
 
                                             {/* Original Image Icon */}
                                             <div className={`flex-1 flex items-center justify-center h-10 rounded-full transition-all duration-300 relative z-10 
                                                 ${viewMode === 'original' ? 'bg-white shadow-md scale-100' : 'scale-90 opacity-50 group-hover:opacity-70'}`}>
-                                                <ImageIcon size={20} className={`transition-colors duration-300 ${viewMode === 'original' ? 'text-blue-500' : 'text-gray-500'}`} />
+                                                <ImageIcon size={20} className={`transition-colors duration-300 ${viewMode === 'original' ? 'text-gray-900' : 'text-gray-500'}`} />
                                             </div>
                                         </button>
                                     )}
@@ -211,8 +211,8 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
 
                                         <div className="flex justify-between items-center border-b pb-2">
                                             <span className="text-gray-600">Az AI diagnózisa:</span>
-                                            <span className={`font-bold text-lg ${aiPrediction === 'igen' ? 'text-red-600' : 'text-green-600'}`}>
-                                                {aiPrediction.toUpperCase()}
+                                            <span className="font-bold text-lg text-gray-900">
+                                                {aiPrediction === 'igen' ? 'Pozitív' : 'Negatív'}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center border-b pb-2">
@@ -253,12 +253,12 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                 <h2 className="text-3xl font-bold mb-6 text-gray-800">Végső Megerősítés</h2>
 
                                 <p className="text-gray-600 mb-8 text-lg">
-                                    Az Ön VÉGSŐ döntése: <strong className={decision === 'igen' ? 'text-red-600' : 'text-green-600'}>{decision.toUpperCase()}</strong>
+                                    Az VÉGSŐ döntésed: <span className="bg-gray-900 text-white px-2 py-1 rounded font-bold">{decision === 'igen' ? 'Pozitív' : 'Negatív'}</span>
                                 </p>
 
                                 <h3 className="text-lg font-bold mb-4 text-gray-700 flex items-center">
                                     Mennyire vagy biztos a döntésedben?
-                                    <HelpTooltip text="Jelölje meg, mennyire biztos a végleges döntésében, miután figyelembe vette az AI visszajelzését. 1: Bizonytalan, 7: Teljesen biztos." align="right" />
+                                    <HelpTooltip text="Jelöld meg, mennyire vagy biztos a döntésedben, miután figyelembe vetted az AI visszajelzését. 1: Bizonytalan, 7: Teljesen biztos." align="right" />
                                 </h3>
 
                                 <div className="grid grid-cols-7 gap-1 mb-2">

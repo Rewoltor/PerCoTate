@@ -214,23 +214,29 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                             <div className="flex gap-4">
                                 <button
                                     onClick={() => setDiagnosis('igen')}
-                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md flex flex-col items-center
                                         ${diagnosis === 'igen'
                                             ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                 >
-                                    Pozitív
+                                    <span>Pozitív</span>
+                                    <span className={`text-xs mt-1 font-normal ${diagnosis === 'igen' ? 'text-blue-100' : 'text-gray-500'}`}>
+                                        van porckopás
+                                    </span>
                                 </button>
                                 <button
                                     onClick={() => {
                                         setDiagnosis('nem');
                                     }}
-                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md
+                                    className={`flex-1 py-5 px-6 rounded-xl border-2 transition-all duration-200 text-xl font-bold tracking-wide shadow-sm hover:shadow-md flex flex-col items-center
                                         ${diagnosis === 'nem'
                                             ? 'bg-blue-600 border-blue-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-blue-300 hover:bg-blue-50'}`}
                                 >
-                                    Negatív
+                                    <span>Negatív</span>
+                                    <span className={`text-xs mt-1 font-normal ${diagnosis === 'nem' ? 'text-blue-100' : 'text-gray-500'}`}>
+                                        nincsen porckopás
+                                    </span>
                                 </button>
                             </div>
                         </div>
