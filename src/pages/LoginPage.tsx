@@ -90,6 +90,9 @@ export const LoginPage: React.FC = () => {
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <Card title="" className="w-full max-w-md pt-8">
+                <div className="flex justify-center mb-6">
+                    <img src="/ppke_logo.png" alt="PPKE Logo" className="h-20 w-auto object-contain" />
+                </div>
                 {/* Custom Toggle Switch */}
                 <div className="flex justify-center mb-8 px-8">
                     <div className="bg-gray-100 p-1 rounded-xl flex w-full relative">
@@ -202,9 +205,7 @@ export const LoginPage: React.FC = () => {
                         </div>
                     )}
 
-                    <p className="text-center text-xs text-gray-400 mt-4">
-                        Pázmány Péter Katolikus Egyetem
-                    </p>
+
                 </form>
             </Card>
         </div>
