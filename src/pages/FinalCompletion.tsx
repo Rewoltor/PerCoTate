@@ -1,14 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { CheckCircle, Clock, Lock } from 'lucide-react';
+import { CheckCircle, Clock, Lock, Gamepad2 } from 'lucide-react';
 import { CONFIG } from '../config';
+import { SnakeGame } from '../components/SnakeGame';
 
 export const FinalCompletion: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { user, logout, markPhase1Complete, markPhase2Complete, debugSkipWashout } = useAuth();
     const [daysLeft, setDaysLeft] = useState<number | null>(null);
+    const [showGame, setShowGame] = useState(false);
+    const [showExitConfirm, setShowExitConfirm] = useState(false);
 
     // Check if we arrived here because of lockout (login attempt during washout)
     // or because we just finished the test.
@@ -55,8 +58,45 @@ export const FinalCompletion: React.FC = () => {
         }
     }, [user, isPhase2AlreadyDone]);
 
+    if (showGame) {
+        return <SnakeGame onExit={() => setShowGame(false)} />;
+    }
+
     return (
         <div className="min-h-screen bg-gray-50 flex flex-col justify-center items-center p-4 animate-in fade-in duration-700">
+            {/* Exit Confirmation Modal */}
+            {showExitConfirm && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in zoom-in duration-200">
+                    <div className="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full text-center border border-gray-100">
+                        <h2 className="text-xl font-bold text-gray-900 mb-2">Biztosan ki akarsz lépni?</h2>
+                        <p className="text-gray-600 mb-6">
+                            Várakozás közben játszhatsz még egy kört a kígyós játékkal!
+                        </p>
+                        <div className="flex flex-col gap-3">
+                            <button
+                                onClick={() => {
+                                    setShowExitConfirm(false);
+                                    setShowGame(true);
+                                }}
+                                className="w-full py-3 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-colors shadow-md flex items-center justify-center gap-2"
+                            >
+                                <Gamepad2 className="w-5 h-5" />
+                                Vissza a játékhoz
+                            </button>
+                            <button
+                                onClick={() => {
+                                    logout();
+                                    navigate('/');
+                                }}
+                                className="w-full py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors border border-red-100"
+                            >
+                                Kilépés
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             <div className="bg-white rounded-2xl shadow-xl p-8 max-w-lg w-full text-center border border-gray-100">
 
                 {/* Visual Icon */}
@@ -98,16 +138,25 @@ export const FinalCompletion: React.FC = () => {
                 )}
 
                 <div className="space-y-4">
-                    <p className="text-sm text-gray-500">
-                        Most bezárhatod az ablakot.
-                    </p>
+                    <div className="bg-blue-50 text-blue-800 p-3 rounded-lg text-sm mb-2 border border-blue-100">
+                        Játssz amíg a többiek végeznek
+                    </div>
 
                     <button
-                        onClick={() => {
-                            logout();
-                            navigate('/');
-                        }}
-                        className="w-full py-4 bg-gray-900 text-white font-bold rounded-xl hover:bg-black transition-all shadow-lg text-lg"
+                        onClick={() => setShowGame(true)}
+                        className="w-full py-4 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 transition-all shadow-lg text-lg flex items-center justify-center gap-2 mb-4"
+                    >
+                        <Gamepad2 className="w-6 h-6" />
+                        Játék indítása
+                    </button>
+
+                    {/* <p className="text-sm text-gray-500">
+                        Most bezárhatod az ablakot.
+                    </p> */}
+
+                    <button
+                        onClick={() => setShowExitConfirm(true)}
+                        className="w-full py-3 text-gray-500 font-medium hover:text-gray-900 transition-colors text-base underline decoration-gray-300 hover:decoration-gray-900 underline-offset-4"
                     >
                         Kilépés a főoldalra
                     </button>
@@ -126,3 +175,4 @@ export const FinalCompletion: React.FC = () => {
         </div >
     );
 };
+
