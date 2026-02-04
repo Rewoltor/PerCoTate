@@ -5,6 +5,7 @@ import { CONFIG } from '../../config';
 import { useAuth } from '../../contexts/AuthContext';
 import { Button } from '../ui/Button';
 import { HelpTooltip } from '../common/HelpTooltip';
+import { ZoomControls } from '../common/ZoomControls';
 import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import type { TrialData } from '../../types';
 
@@ -33,6 +34,13 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
 
     const [saving, setSaving] = useState(false);
     const [startTime, setStartTime] = useState<number>(Date.now());
+
+    // Zoom State - Persists per user session (shared with AITrial)
+    const [zoom, setZoom] = useState<number>(() => {
+        if (!user) return 100;
+        const stored = sessionStorage.getItem(`annotation-zoom-${user.userID}`);
+        return stored ? Math.min(200, Math.max(100, parseInt(stored))) : 100;
+    });
 
     // Computed
     const canSubmit = diagnosis && confidence; // Submit only depends on diagnosis and confidence
@@ -88,8 +96,18 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             });
     }, [currentTrialIndex, user]);
 
+    // Zoom Persistence Effect
+    useEffect(() => {
+        if (user) {
+            sessionStorage.setItem(`annotation-zoom-${user.userID}`, zoom.toString());
+        }
+    }, [zoom, user]);
+
     // Removed separate reset effect to avoid race conditions
     // State reset is now handled in the image load chain ensure synchronization
+
+    const handleZoomIn = () => setZoom(prev => Math.min(200, prev + 25));
+    const handleZoomOut = () => setZoom(prev => Math.max(100, prev - 25));
 
     const handleNext = async () => {
         if (!user || !canSubmit) return;
@@ -182,7 +200,13 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                                 <span className="text-lg font-medium animate-pulse">Kép betöltése...</span>
                             </div>
                         )}
-                        <div className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} w-full h-full flex items-center justify-center`}>
+                        <div
+                            className={`transition-opacity duration-300 ${loading ? 'opacity-0' : 'opacity-100'} flex items-center justify-center transition-transform duration-200`}
+                            style={{
+                                transform: `scale(${zoom / 100})`,
+                                transformOrigin: 'center center',
+                            }}
+                        >
                             {currentImageUrl ? (
                                 <img
                                     src={currentImageUrl}
@@ -195,6 +219,13 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                             )}
                         </div>
                     </div>
+                    <ZoomControls
+                        zoom={zoom}
+                        onZoomIn={handleZoomIn}
+                        onZoomOut={handleZoomOut}
+                        min={100}
+                        max={200}
+                    />
                 </div>
 
                 {/* Right: Controls */}

@@ -9,6 +9,7 @@ import { getAIPrediction, type AIPrediction } from '../../utils/aiLookup';
 import { type Box } from '../../utils/math';
 import { BBoxTool, type ColoredBox } from '../common/BBoxTool';
 import { HelpTooltip } from '../common/HelpTooltip';
+import { ZoomControls } from '../common/ZoomControls';
 import { AIFeedbackModal } from './AIFeedbackModal';
 import { PreConfidenceModal } from './PreConfidenceModal';
 
@@ -46,6 +47,13 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     const [finalDiagnosis, setFinalDiagnosis] = useState<'igen' | 'nem' | null>(null);
     const [_finalConfidence, setFinalConfidence] = useState<number | null>(null); // Post-feedback
 
+    // Zoom State - Persists per user session
+    const [zoom, setZoom] = useState<number>(() => {
+        if (!user) return 100;
+        const stored = sessionStorage.getItem(`annotation-zoom-${user.userID}`);
+        return stored ? Math.min(200, Math.max(100, parseInt(stored))) : 100;
+    });
+
     // Stats
     const [startTime, setStartTime] = useState<number>(Date.now());
     const [aiData, setAiData] = useState<AIPrediction | null>(null); // Prediction, Box, etc.
@@ -80,6 +88,13 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             }
         }
     }, [currentTrialIndex, user]);
+
+    // 3. Zoom Persistence Effect
+    useEffect(() => {
+        if (user) {
+            sessionStorage.setItem(`annotation-zoom-${user.userID}`, zoom.toString());
+        }
+    }, [zoom, user]);
 
     const loadTrialData = async (imageId: number) => {
         setLoading(true);
@@ -143,6 +158,9 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
         // Usually safer to stop to allow scroll/etc.
         if (box) setActiveBoxId(null);
     };
+
+    const handleZoomIn = () => setZoom(prev => Math.min(200, prev + 25));
+    const handleZoomOut = () => setZoom(prev => Math.max(100, prev - 25));
 
     const handleInitialSubmit = () => {
         if (!isValidSubmit()) return;
@@ -288,7 +306,17 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                         activeBoxId={step === 'initial' ? activeBoxId : null}
                         onChange={handleBoxChange}
                         enabled={step === 'initial'}
+                        scale={zoom / 100}
                     />
+                    {step === 'initial' && (
+                        <ZoomControls
+                            zoom={zoom}
+                            onZoomIn={handleZoomIn}
+                            onZoomOut={handleZoomOut}
+                            min={100}
+                            max={200}
+                        />
+                    )}
                 </div>
 
                 {/* Right: Controls Panel */}

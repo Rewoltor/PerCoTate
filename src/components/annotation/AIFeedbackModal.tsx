@@ -201,7 +201,7 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                     )}
 
                                     <div className="space-y-3 text-sm">
-                                        {/* Breakdown of Overlaps */}
+                                        {/* Breakdown of Overlaps (Symptoms 1 & 2) */}
                                         {userBoxes.map((box) => (
                                             <div key={box.id} className="flex justify-between items-center border-b pb-2">
                                                 <span className="text-gray-600">Átfedés ({box.label}. Tünet):</span>
@@ -209,15 +209,18 @@ export const AIFeedbackModal: React.FC<AIFeedbackModalProps & {
                                             </div>
                                         ))}
 
-                                        <div className="flex justify-between items-center border-b pb-2">
-                                            <span className="text-gray-600">Az AI diagnózisa:</span>
-                                            <span className="font-bold text-lg text-gray-900">
-                                                {aiPrediction === 'igen' ? 'Pozitív' : 'Negatív'}
-                                            </span>
-                                        </div>
+                                        {/* AI Confidence */}
                                         <div className="flex justify-between items-center border-b pb-2">
                                             <span className="text-gray-600">Az AI magabiztossága:</span>
                                             <span className="font-bold text-lg">{Math.round(aiConfidence * 100)}%</span>
+                                        </div>
+
+                                        {/* AI Prediction - Highlighted with dark background */}
+                                        <div className="flex justify-between items-center pt-1">
+                                            <span className="text-gray-600">Az AI diagnózisa:</span>
+                                            <span className="bg-gray-900 text-white px-3 py-1 rounded font-bold text-lg">
+                                                {aiPrediction === 'igen' ? 'Pozitív' : 'Negatív'}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>

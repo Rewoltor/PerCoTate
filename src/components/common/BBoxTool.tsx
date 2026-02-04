@@ -20,6 +20,7 @@ interface BBoxToolProps {
     activeBoxId: string | null;
     onChange: (id: string, box: Box | null) => void;
     enabled?: boolean;
+    scale?: number; // Zoom scale factor (1.0 = 100%, 2.0 = 200%)
 }
 
 export const BBoxTool: React.FC<BBoxToolProps> = ({
@@ -28,59 +29,91 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
     activeBoxId,
     onChange,
     enabled = true,
+    scale = 1.0,
 }) => {
     const imgRef = useRef<HTMLImageElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     const [drawing, setDrawing] = useState(false);
     const [startPoint, setStartPoint] = useState<{ x: number; y: number } | null>(null);
-
-    // We don't keep local display state for all boxes, we calculate on render/prop update
-    // But for the *currently drawing* box, we need immediate feedback.
     const [currentDragBox, setCurrentDragBox] = useState<Box | null>(null);
+
+    // Track the displayed dimensions (natural size × scale)
+    const [displayWidth, setDisplayWidth] = useState(0);
+    const [displayHeight, setDisplayHeight] = useState(0);
+
+
+    // Update displayed dimensions when image loads or scale changes
+    useEffect(() => {
+        const img = imgRef.current;
+        if (!img) return;
+
+        const updateDimensions = () => {
+            if (img.naturalWidth === 0 || img.naturalHeight === 0) return;
+
+            // Calculate display size: natural size × scale
+            const newWidth = Math.round(img.naturalWidth * scale);
+            const newHeight = Math.round(img.naturalHeight * scale);
+
+            setDisplayWidth(newWidth);
+            setDisplayHeight(newHeight);
+        };
+
+        if (img.complete && img.naturalWidth > 0) {
+            updateDimensions();
+        }
+
+        img.addEventListener('load', updateDimensions);
+        return () => img.removeEventListener('load', updateDimensions);
+    }, [src, scale]);
+
+    // Update canvas size when display dimensions change
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas || displayWidth === 0 || displayHeight === 0) return;
+
+        canvas.width = displayWidth;
+        canvas.height = displayHeight;
+
+        // Redraw after canvas resize
+        draw();
+    }, [displayWidth, displayHeight]);
 
     // Helper: Client -> Display Coords
     const clientToDisplay = (clientX: number, clientY: number) => {
-        const img = imgRef.current;
-        if (!img) return null;
-        const rect = img.getBoundingClientRect();
-        const x = Math.max(0, Math.min(rect.width, clientX - rect.left));
-        const y = Math.max(0, Math.min(rect.height, clientY - rect.top));
-        return { x, y, rect };
+        const canvas = canvasRef.current;
+        if (!canvas) return null;
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.max(0, Math.min(displayWidth, clientX - rect.left));
+        const y = Math.max(0, Math.min(displayHeight, clientY - rect.top));
+        return { x, y };
     };
 
     // Helper: Display -> Natural Coords
     const displayToNatural = (box: Box) => {
         const img = imgRef.current;
-        if (!img || !box) return null;
-        const rect = img.getBoundingClientRect();
-        // Prevent division by zero
-        if (rect.width === 0 || rect.height === 0) return null;
+        if (!img || !box || img.naturalWidth === 0 || img.naturalHeight === 0) return null;
 
-        const scaleX = img.naturalWidth / rect.width;
-        const scaleY = img.naturalHeight / rect.height;
+        // Since displayWidth = naturalWidth × scale, we just divide by scale
         return {
-            x: Math.round(box.x * scaleX),
-            y: Math.round(box.y * scaleY),
-            width: Math.round(box.width * scaleX),
-            height: Math.round(box.height * scaleY),
+            x: Math.round(box.x / scale),
+            y: Math.round(box.y / scale),
+            width: Math.round(box.width / scale),
+            height: Math.round(box.height / scale),
         };
     };
 
-    // Helper: Natural -> Display Coords
+    // Helper: Natural -> Display Coords  
     const naturalToDisplay = (box: Box) => {
-        const img = imgRef.current;
-        if (!img || !box) return null;
-        const rect = img.getBoundingClientRect();
-        if (img.naturalWidth === 0 || img.naturalHeight === 0) return null;
+        if (!box) return null;
 
-        const scaleX = rect.width / img.naturalWidth;
-        const scaleY = rect.height / img.naturalHeight;
+        // Since displayWidth = naturalWidth × scale, we just multiply by scale
         return {
-            x: box.x * scaleX,
-            y: box.y * scaleY,
-            width: box.width * scaleX,
-            height: box.height * scaleY,
+            x: box.x * scale,
+            y: box.y * scale,
+            width: box.width * scale,
+            height: box.height * scale,
         };
     };
 
@@ -89,89 +122,50 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         const canvas = canvasRef.current;
         const img = imgRef.current;
         if (!canvas || !img) return;
+
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
+        // Clear
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw existing boxes (from props)
-        boxes.forEach(b => {
-            // If we are currently redrawing this specific box, skip it in the static render
-            // (we draw the drag box instead)
-            if (drawing && activeBoxId === b.id) return;
+        // Draw all boxes (converted from natural to display)
+        boxes.forEach((coloredBox) => {
+            const displayBox = naturalToDisplay(coloredBox.box);
+            if (!displayBox) return;
 
-            const dBox = naturalToDisplay(b.box);
-            if (dBox) {
-                drawBox(ctx, dBox, b.color, b.label);
+            ctx.strokeStyle = coloredBox.color || 'blue';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(displayBox.x, displayBox.y, displayBox.width, displayBox.height);
+
+            // Label (optional)
+            if (coloredBox.label) {
+                ctx.fillStyle = coloredBox.color || 'blue';
+                ctx.font = '14px sans-serif';
+                ctx.fillText(coloredBox.label, displayBox.x + 5, displayBox.y - 5);
             }
         });
 
-        // Draw currently dragging box
-        if (drawing && currentDragBox && activeBoxId) {
-            const activeColor = boxes.find(b => b.id === activeBoxId)?.color || '#00FF00';
-            drawBox(ctx, currentDragBox, activeColor, "Rajzolás...");
+        // Draw current drag box if drawing
+        if (currentDragBox) {
+            ctx.strokeStyle = getActiveBoxColor();
+            ctx.lineWidth = 3;
+            ctx.setLineDash([5, 5]);
+            ctx.strokeRect(currentDragBox.x, currentDragBox.y, currentDragBox.width, currentDragBox.height);
+            ctx.setLineDash([]);
         }
     };
 
-    const drawBox = (ctx: CanvasRenderingContext2D, box: Box, color: string, label?: string) => {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([]); // Solid line
-        ctx.strokeRect(box.x, box.y, box.width, box.height);
-
-        // Fill
-        // Parse hex to rgba for fill
-        ctx.fillStyle = hexToRgba(color, 0.2);
-        ctx.fillRect(box.x, box.y, box.width, box.height);
-
-        // Label
-        if (label) {
-            ctx.fillStyle = color;
-            ctx.font = "bold 12px sans-serif";
-            ctx.fillText(label, box.x, box.y - 5);
-        }
-    };
-
-    const hexToRgba = (hex: string, alpha: number) => {
-        // Very basic implementation
-        let c: any;
-        if (/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-            c = hex.substring(1).split('');
-            if (c.length == 3) {
-                c = [c[0], c[0], c[1], c[1], c[2], c[2]];
-            }
-            c = '0x' + c.join('');
-            return 'rgba(' + [(c >> 16) & 255, (c >> 8) & 255, c & 255].join(',') + ',' + alpha + ')';
-        }
-        return 'rgba(0,0,0,0.2)'; // Fallback
+    const getActiveBoxColor = () => {
+        if (!activeBoxId) return 'rgba(0,0,0,0.2)';
+        const found = boxes.find(b => b.id === activeBoxId);
+        return found?.color || 'rgba(0,0,0,0.2)';
     }
 
-    // Resize Canvas
-    const resizeCanvas = () => {
-        const img = imgRef.current;
-        const canvas = canvasRef.current;
-        if (!img || !canvas) return;
-        const rect = img.getBoundingClientRect();
-        if (rect.width === 0 || rect.height === 0) return;
-
-        canvas.width = Math.round(rect.width);
-        canvas.height = Math.round(rect.height);
-        canvas.style.width = `${Math.round(rect.width)}px`;
-        canvas.style.height = `${Math.round(rect.height)}px`;
-        draw();
-    };
-
+    // Redraw when boxes change or scale changes
     useEffect(() => {
-        window.addEventListener('resize', resizeCanvas);
-        return () => window.removeEventListener('resize', resizeCanvas);
-    }, []);
-
-    // Redraw when boxes change
-    useEffect(() => {
-        // Use timeout to ensure image might be laid out? 
-        // Actually requestAnimationFrame is better but basic effect is fine.
         draw();
-    }, [boxes, src, currentDragBox, drawing]); // Dependencies
+    }, [boxes, currentDragBox, scale, displayWidth, displayHeight]);
 
     // Handle Pointers
     const getClientFromEvent = (e: any) => {
@@ -226,23 +220,25 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
         setCurrentDragBox(null);
     };
 
-    useEffect(() => {
-        const img = imgRef.current;
-        if (!img) return;
-        const onLoad = () => resizeCanvas();
-        img.addEventListener('load', onLoad);
-        if (img.complete) resizeCanvas();
-        return () => img.removeEventListener('load', onLoad);
-    }, [src]);
-
     return (
-        <div className="w-full h-full flex items-center justify-center overflow-hidden relative">
-            <div className="relative flex-shrink-0" style={{ maxHeight: 'calc(100% - 60px)', maxWidth: '100%' }}>
+        <div className="w-full h-full flex items-center justify-center overflow-auto relative" ref={containerRef}>
+            <div
+                className="relative flex-shrink-0"
+                style={{
+                    width: displayWidth || 'auto',
+                    height: displayHeight || 'auto',
+                }}
+            >
                 <img
                     ref={imgRef}
                     src={src}
                     alt="annotation"
-                    className="max-h-full max-w-full object-contain block select-none"
+                    className="block select-none"
+                    style={{
+                        width: displayWidth || 'auto',
+                        height: displayHeight || 'auto',
+                        objectFit: 'contain',
+                    }}
                     draggable={false}
                 />
                 <canvas
@@ -255,8 +251,8 @@ export const BBoxTool: React.FC<BBoxToolProps> = ({
                         position: 'absolute',
                         left: 0,
                         top: 0,
-                        width: '100%',
-                        height: '100%',
+                        width: displayWidth || 0,
+                        height: displayHeight || 0,
                         pointerEvents: (enabled && activeBoxId) ? 'auto' : 'none',
                         touchAction: 'none',
                         cursor: (enabled && activeBoxId) ? 'crosshair' : 'default',
