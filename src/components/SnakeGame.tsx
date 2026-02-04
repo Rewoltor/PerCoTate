@@ -17,7 +17,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ onExit }) => {
     const [snake, setSnake] = useState<Point[]>([{ x: 10, y: 10 }]);
     const [food, setFood] = useState<Point>({ x: 15, y: 10 });
     const [gameOver, setGameOver] = useState(false);
-
+    // const [score, setScore] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
     const requestRef = useRef<number>();
     const lastUpdateRef = useRef<number>(0);
