@@ -323,7 +323,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
                 <div className="w-[400px] bg-white border-l p-6 flex flex-col gap-8 overflow-y-auto">
                     <div>
                         <h2 className="text-xl font-bold mb-1">Eset: {currentTrialIndex + 1} / {TOTAL_TRIALS}</h2>
-                        <p className="text-gray-500 text-sm">AI Asszisztenssel</p>
+                        {/* <p className="text-gray-500 text-sm">AI Asszisztenssel</p> */}
                         {CONFIG.IS_DEBUG_MODE && (
                             <p className="text-xs text-red-500 font-mono mt-1 break-all">
                                 [DEBUG] Image: {aiData.imageName}

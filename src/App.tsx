@@ -47,11 +47,7 @@ const App: React.FC = () => {
             <Route path="group0">
               <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="intro-big5" />} />
 
-              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`A következő kérdőív az ún. Big Five személyiségtesztet tartalmazza, amely a személyiségpszichológia egyik legmegbízhatóbb és legszélesebb körben alkalmazott mérőeszköze.
-
-                **Mit mér a teszt?**
-                Öt alapvető személyiségdimenziót: nyitottság, lelkiismeretesség, extraverzió, barátságosság és érzelmi stabilitás.
-
+              <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`
                 **Hogyan töltsd ki?**
                 • Olvasd el figyelmesen az állításokat
                 • Válaszolj őszintén, spontán módon

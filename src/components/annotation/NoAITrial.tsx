@@ -182,14 +182,14 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
     return (
         <div className="h-screen flex flex-col bg-gray-50 text-gray-800 font-sans overflow-hidden">
             {/* Header */}
-            <header className="flex-none h-16 bg-white border-b px-8 flex items-center justify-between shadow-sm z-10">
+            {/* <header className="flex-none h-16 bg-white border-b px-8 flex items-center justify-between shadow-sm z-10">
                 <div className="text-2xl font-bold tracking-tight text-gray-900">
                     PerCoTate <span className="text-blue-600">Control</span>
                 </div>
                 <div className="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
                     {user?.userID || 'User'}
                 </div>
-            </header>
+            </header> */}
 
             <div className="flex-1 flex overflow-hidden">
                 {/* Left: Canvas */}
@@ -232,7 +232,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                 <div className="w-[400px] bg-white border-l p-6 flex flex-col gap-8 overflow-y-auto shadow-xl z-20">
                     <div>
                         <h2 className="text-xl font-bold mb-1 text-gray-900">{currentTrialIndex + 1} / {TOTAL_TRIALS}</h2>
-                        <p className="text-gray-500 text-sm">(AI nélkül)</p>
+                        {/* <p className="text-gray-500 text-sm">(AI nélkül)</p> */}
                     </div>
 
                     <div className="space-y-6">

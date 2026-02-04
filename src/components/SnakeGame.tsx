@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Trophy, RotateCcw, X } from 'lucide-react';
+import { RotateCcw, X } from 'lucide-react';
 
 interface SnakeGameProps {
     onExit: () => void;
@@ -17,7 +17,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ onExit }) => {
     const [snake, setSnake] = useState<Point[]>([{ x: 10, y: 10 }]);
     const [food, setFood] = useState<Point>({ x: 15, y: 10 });
     const [gameOver, setGameOver] = useState(false);
-    const [score, setScore] = useState(0);
+
     const [isPlaying, setIsPlaying] = useState(false);
     const requestRef = useRef<number>();
     const lastUpdateRef = useRef<number>(0);
@@ -40,7 +40,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ onExit }) => {
         lastProcessedDirectionRef.current = 'RIGHT';
         moveQueueRef.current = [];
         setGameOver(false);
-        setScore(0);
+
         setIsPlaying(true);
     };
 
@@ -127,7 +127,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ onExit }) => {
 
                 // Check food collision
                 if (head.x === food.x && head.y === food.y) {
-                    setScore(s => s + 1);
+
                     setFood(generateFood());
                 } else {
                     newSnake.pop();
@@ -196,10 +196,7 @@ export const SnakeGame: React.FC<SnakeGameProps> = ({ onExit }) => {
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-2xl font-bold text-gray-800">Snake</h2>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full font-bold">
-                            <Trophy className="w-4 h-4" />
-                            <span>{score}</span>
-                        </div>
+
                         <button
                             onClick={onExit}
                             className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-gray-100 transition-colors"
