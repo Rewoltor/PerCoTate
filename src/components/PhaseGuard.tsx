@@ -2,6 +2,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import type { Phase } from '../types';
+import { getNextStep } from '../utils/navigation';
 
 interface PhaseGuardProps {
     children: React.ReactNode;
@@ -24,9 +25,9 @@ export const PhaseGuard: React.FC<PhaseGuardProps> = ({ children, requiredPhase 
             return <Navigate to="/completion" replace />;
         }
 
-        // Redirect to their actual phase
-        // e.g., if accessing phase2 but in phase1, go to phase1 landing
-        return <Navigate to={`/${user.currentPhase}/group${user.treatmentGroup}/landing`} replace />;
+        // Redirect to their actual phase's first step
+        const nextStep = getNextStep(user);
+        return <Navigate to={`/${user.currentPhase}/group${user.treatmentGroup}/${nextStep}`} replace />;
     }
 
     return <>{children}</>;

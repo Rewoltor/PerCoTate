@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { DebugChip } from './common/DebugChip';
 
 export const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading } = useAuth();
@@ -24,5 +25,10 @@ export const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children
         return <Navigate to="/" replace />;
     }
 
-    return <>{children}</>;
+    return (
+        <>
+            <DebugChip />
+            {children}
+        </>
+    );
 };

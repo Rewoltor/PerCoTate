@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/ui/Button';
 import { Card } from '../components/ui/Card';
+import { getNextStep } from '../utils/navigation';
 
 export const LoginPage: React.FC = () => {
     const { authenticate, loading, error, user, adminUnlockUser } = useAuth();
@@ -57,7 +58,8 @@ export const LoginPage: React.FC = () => {
                 navigate('/completion');
                 return;
             }
-            const path = `/${user.currentPhase}/group${user.treatmentGroup}/landing`;
+            const nextStep = getNextStep(user);
+            const path = `/${user.currentPhase}/group${user.treatmentGroup}/${nextStep}`;
             console.log("[LoginPage] User found, redirecting to:", path, user);
             navigate(path);
         } else {

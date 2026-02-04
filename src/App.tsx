@@ -6,9 +6,7 @@ import { PhaseGuard } from './components/PhaseGuard';
 
 // Pages
 import { LoginPage } from './pages/LoginPage';
-import { LandingPage } from './pages/LandingPage';
 
-import { Phase2LandingPage } from './pages/Phase2LandingPage';
 
 // Components
 import { DemographicsForm } from './components/psychometrics/DemographicsForm';
@@ -47,8 +45,6 @@ const App: React.FC = () => {
 
             {/* Group 0: Demo -> IntroBig5 -> Big5 -> IntroIQ -> IQ -> IntroVideo -> Video -> IntroAnnotation -> Annotation */}
             <Route path="group0">
-              <Route path="landing" element={<LandingPage />} />
-
               <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="intro-big5" />} />
 
               <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`A következő kérdőív az ún. Big Five személyiségtesztet tartalmazza, amely a személyiségpszichológia egyik legmegbízhatóbb és legszélesebb körben alkalmazott mérőeszköze.
@@ -86,7 +82,6 @@ const App: React.FC = () => {
 
             {/* Group 1: Demo -> Video -> AI */}
             <Route path="group1">
-              <Route path="landing" element={<LandingPage />} />
               <Route path="demographics" element={<StepWrapper component={DemographicsForm} nextPath="video" />} />
               <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video1.1.mp4" />} nextPath="annotation" />} />
               <Route path="annotation" element={<FinalStepWrapper component={AITrial} />} />
@@ -99,7 +94,6 @@ const App: React.FC = () => {
 
             {/* Group 0 (was Control, now AI): Video -> AI */}
             <Route path="group0">
-              <Route path="landing" element={<Phase2LandingPage />} />
               <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Oktatóvideó" description="A következő lépésben egy rövid videót fogsz látni, amely bemutatja az AI asszisztens használatát." buttonText="Videó Indítása" />} nextPath="video" />} />
               <Route path="video" element={<StepWrapper component={(props) => <VideoModule {...props} videoSrc="/videos/video0.2.mp4" />} nextPath="annotation" />} />
               <Route path="annotation" element={<FinalStepWrapper component={AITrial} />} />
@@ -107,8 +101,6 @@ const App: React.FC = () => {
 
             {/* Group 1 (was AI, now Control + Psych): Big5 -> IQ -> Video -> NoAI */}
             <Route path="group1">
-              <Route path="landing" element={<Phase2LandingPage />} />
-
               <Route path="intro-big5" element={<StepWrapper component={(props) => <IntroPage {...props} title="Személyiségteszt" description={`A következő kérdőív az ún. Big Five személyiségtesztet tartalmazza, amely a személyiségpszichológia egyik legmegbízhatóbb és legszélesebb körben alkalmazott mérőeszköze.
 
 **Mit mér a teszt?**
