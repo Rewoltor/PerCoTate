@@ -108,7 +108,7 @@ const App: React.FC = () => {
 A személyiségjellemzők segítenek megérteni, hogyan dolgoznak az emberek különböző helyzetekben. Az adataid anonim módon kerülnek feldolgozásra és kizárólag tudományos célokat szolgálnak.`} buttonText="Teszt Kitöltése" />} nextPath="big5" />} />
               <Route path="big5" element={<StepWrapper component={Big5Test} nextPath="intro-iq" />} />
 
-              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészíteni." buttonText="Teszt Indítása" />} nextPath="iq" />} />
+              <Route path="intro-iq" element={<StepWrapper component={(props) => <IntroPage {...props} title="Logikai Teszt" description="A következő feladatban logikai sorozatokat kell kiegészíteni. Figyelj a sorozatokra, és válaszd ki azt a képet, amelyik a bal oldali kocka lehetséges elforgatása." buttonText="Teszt Indítása" />} nextPath="iq" />} />
               <Route path="iq" element={<StepWrapper component={IQTest} nextPath="intro-video" />} />
 
               <Route path="intro-video" element={<StepWrapper component={(props) => <IntroPage {...props} title="Felkészülés a 2. Fázisra" description="Ebben a fázisban önállóan fogsz dolgozni AI segítség nélkül. Kérjük, nézd meg az emlékeztető videót." buttonText="Videó Megtekintése" />} nextPath="video" />} />
