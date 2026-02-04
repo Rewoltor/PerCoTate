@@ -13,8 +13,16 @@ interface NoAITrialProps {
 }
 
 export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
-    const { user } = useAuth();
-    const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
+    const { user, refreshUser } = useAuth();
+
+    // Initialize from database instead of always starting at 0
+    const [currentTrialIndex, setCurrentTrialIndex] = useState(() => {
+        if (!user) return 0;
+        const isPhase2 = user.currentPhase === 'phase2';
+        return isPhase2
+            ? (user.currentTrialIndexPhase2 ?? 0)
+            : (user.currentTrialIndexPhase1 ?? 0);
+    });
     const [loading, setLoading] = useState(true);
 
     // Annotation State
@@ -31,7 +39,7 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
 
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
 
-    // Initialize from User Context
+    // Initialize - Check if user has already completed all trials
     useEffect(() => {
         if (user) {
             const isPhase2 = user.currentPhase === 'phase2';
@@ -42,11 +50,8 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
                 onComplete();
                 return;
             }
-            if (completedCount > currentTrialIndex) {
-                setCurrentTrialIndex(completedCount);
-            }
         }
-    }, [user, onComplete, TOTAL_TRIALS, currentTrialIndex]);
+    }, [user, onComplete, TOTAL_TRIALS]);
 
     // Handle Image Load - Dependent on index change
     useEffect(() => {
@@ -134,7 +139,15 @@ export const NoAITrial: React.FC<NoAITrialProps> = ({ onComplete }) => {
             if (currentTrialIndex + 1 >= TOTAL_TRIALS) {
                 onComplete();
             } else {
-                setCurrentTrialIndex(prev => prev + 1);
+                const newIndex = currentTrialIndex + 1;
+                setCurrentTrialIndex(newIndex);
+
+                // Save progress to database for page refresh persistence
+                const progressField = isPhase2 ? 'currentTrialIndexPhase2' : 'currentTrialIndexPhase1';
+                await setDoc(userRef, { [progressField]: newIndex }, { merge: true });
+
+                // Refresh user context to sync localStorage with database
+                await refreshUser();
             }
 
         } catch (err) {

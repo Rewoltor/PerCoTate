@@ -8,6 +8,47 @@ import type { Participant, TreatmentGroup } from '../types';
 
 // ... (existing imports)
 
+// ==================== Session Storage Helpers ====================
+const STORAGE_KEY = 'percotate_user_session';
+
+const saveUserToStorage = (user: Participant): void => {
+    try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        console.log('[Storage] User session saved to localStorage');
+    } catch (error) {
+        console.error('[Storage] Failed to save user session:', error);
+    }
+};
+
+const loadUserFromStorage = (): Participant | null => {
+    try {
+        const stored = localStorage.getItem(STORAGE_KEY);
+        if (!stored) {
+            console.log('[Storage] No saved session found');
+            return null;
+        }
+        const user = JSON.parse(stored) as Participant;
+        console.log('[Storage] User session restored from localStorage:', user.userID);
+        return user;
+    } catch (error) {
+        console.error('[Storage] Failed to load user session:', error);
+        // Clear corrupted data
+        localStorage.removeItem(STORAGE_KEY);
+        return null;
+    }
+};
+
+const clearUserFromStorage = (): void => {
+    try {
+        localStorage.removeItem(STORAGE_KEY);
+        console.log('[Storage] User session cleared from localStorage');
+    } catch (error) {
+        console.error('[Storage] Failed to clear user session:', error);
+    }
+};
+
+// ==================== End Storage Helpers ====================
+
 interface AuthContextType {
     user: Participant | null;
     loading: boolean;
@@ -25,8 +66,23 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [user, setUser] = useState<Participant | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true); // Start as true for initial session check
     const [error, setError] = useState<string | null>(null);
+
+    // ==================== Session Restoration ====================
+    // Restore user session from localStorage on mount
+    React.useEffect(() => {
+        console.log('[Auth] Checking for saved session...');
+        const savedUser = loadUserFromStorage();
+        if (savedUser) {
+            setUser(savedUser);
+            console.log('[Auth] Session restored successfully');
+        } else {
+            console.log('[Auth] No saved session, user must login');
+        }
+        setLoading(false); // Session check complete
+    }, []); // Run only once on mount
+    // ==================== End Session Restoration ====================
 
     // Persist user session ideally, but for now we might rely on re-login or localStorage
     // The requirements don't strictly specify persistent session across refreshes without re-login,
@@ -152,6 +208,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log("[Auth] Authentication successful. Setting user.", participantData);
             setUser(participantData);
 
+            // Save session to localStorage for persistence across page refreshes
+            saveUserToStorage(participantData);
+
         } catch (err: any) {
             console.error("Auth Error:", err);
             setError(err.message || "Hitelesítési hiba.");
@@ -207,7 +266,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (userSnap.exists()) {
                 const newData = userSnap.data() as Participant;
                 setUser(newData);
-                console.log("[Auth] User data refreshed.");
+                // Also save to localStorage to keep session in sync
+                saveUserToStorage(newData);
+                console.log("[Auth] User data refreshed and saved to storage.");
             }
         } catch (e) {
             console.error("Failed to refresh user:", e);
@@ -317,6 +378,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const logout = () => {
         setUser(null);
+        clearUserFromStorage(); // Clear saved session
         auth.signOut();
     };
 

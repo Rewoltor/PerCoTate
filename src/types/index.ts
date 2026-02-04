@@ -16,6 +16,10 @@ export interface Participant {
     completedTrials: { [trialId: string]: boolean };
     completedTrialsPhase2?: { [trialId: string]: boolean };
 
+    // Current position in annotation session (for page refresh persistence)
+    currentTrialIndexPhase1?: number; // 0-based index of current trial in Phase 1
+    currentTrialIndexPhase2?: number; // 0-based index of current trial in Phase 2
+
     // Psychometrics
     demographics?: Demographics;
     big5?: Big5Response;

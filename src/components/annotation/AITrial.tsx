@@ -19,8 +19,16 @@ interface AITrialProps {
 type Step = 'initial' | 'pre-confidence' | 'feedback' | 'post-confidence';
 
 export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
-    const { user } = useAuth();
-    const [currentTrialIndex, setCurrentTrialIndex] = useState(0);
+    const { user, refreshUser } = useAuth();
+
+    // Initialize from database instead of always starting at 0
+    const [currentTrialIndex, setCurrentTrialIndex] = useState(() => {
+        if (!user) return 0;
+        const isPhase2 = user.currentPhase === 'phase2';
+        return isPhase2
+            ? (user.currentTrialIndexPhase2 ?? 0)
+            : (user.currentTrialIndexPhase1 ?? 0);
+    });
     const [loading, setLoading] = useState(true);
     const [step, setStep] = useState<Step>('initial');
 
@@ -45,7 +53,7 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
     // Constants
     const TOTAL_TRIALS = CONFIG.IS_DEBUG_MODE ? CONFIG.DEBUG_TRIALS_PER_SESSION : CONFIG.TRIALS_PER_SESSION;
 
-    // 1. Initialization Effect
+    // 1. Initialization Effect - Check if user has already completed all trials
     useEffect(() => {
         if (user) {
             const isPhase2 = user.currentPhase === 'phase2';
@@ -54,13 +62,9 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
 
             if (completedCount >= TOTAL_TRIALS) {
                 onComplete();
-            } else {
-                if (currentTrialIndex === 0 && completedCount > 0) {
-                    setCurrentTrialIndex(completedCount);
-                }
             }
         }
-    }, [user, TOTAL_TRIALS]);
+    }, [user, TOTAL_TRIALS, onComplete]);
 
     // 2. Data Loading Effect
     useEffect(() => {
@@ -221,7 +225,15 @@ export const AITrial: React.FC<AITrialProps> = ({ onComplete }) => {
             if (currentTrialIndex + 1 >= TOTAL_TRIALS) {
                 onComplete();
             } else {
-                setCurrentTrialIndex(prev => prev + 1);
+                const newIndex = currentTrialIndex + 1;
+                setCurrentTrialIndex(newIndex);
+
+                // Save progress to database for page refresh persistence
+                const progressField = isPhase2 ? 'currentTrialIndexPhase2' : 'currentTrialIndexPhase1';
+                await setDoc(userRef, { [progressField]: newIndex }, { merge: true });
+
+                // Refresh user context to sync localStorage with database
+                await refreshUser();
             }
 
         } catch (e) {

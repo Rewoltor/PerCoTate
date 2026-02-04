@@ -6,7 +6,18 @@ export const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children
     const { user, loading } = useAuth();
 
     if (loading) {
-        return <div>Loading...</div>; // Simple spinner logic
+        return (
+            <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+                height: '100vh',
+                fontSize: '1.2rem',
+                color: '#666'
+            }}>
+                Betöltés...
+            </div>
+        );
     }
 
     if (!user) {
