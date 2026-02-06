@@ -5,6 +5,8 @@ Core library for exporting data from Firebase Firestore.
 
 This module provides functions to export all collections and documents
 from Firestore, including subcollections, with proper type conversion.
+
+Includes robust retry logic and pagination for handling large collections.
 """
 
 import firebase_admin
@@ -13,6 +15,20 @@ import json
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Any, Optional, Callable
+
+from google.api_core.retry import Retry
+from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
+
+# Configuration for retry and pagination
+DEFAULT_RETRY = Retry(
+    initial=1.0,           # Initial delay between retries (seconds)
+    maximum=60.0,          # Maximum delay between retries (seconds)
+    multiplier=2.0,        # Delay multiplier for exponential backoff
+    deadline=600.0,        # Total timeout for the operation (10 minutes)
+    predicate=lambda exc: isinstance(exc, (DeadlineExceeded, ServiceUnavailable))
+)
+
+BATCH_SIZE = 500  # Number of documents to fetch per batch
 
 
 def convert_firestore_value(value: Any) -> Any:
@@ -47,6 +63,93 @@ def convert_firestore_value(value: Any) -> Any:
         return value
 
 
+def export_collection_paginated(
+    collection_ref,
+    collection_name: str = "",
+    progress_callback: Optional[Callable] = None,
+    batch_size: int = BATCH_SIZE
+) -> Dict[str, Any]:
+    """
+    Export all documents from a collection using pagination for large datasets.
+    
+    This method fetches documents in batches to avoid timeout issues with
+    large collections. It uses cursor-based pagination with __name__ ordering.
+    
+    Args:
+        collection_ref: Firestore collection reference
+        collection_name: Name of the collection (for progress reporting)
+        progress_callback: Optional callback function for progress updates
+        batch_size: Number of documents to fetch per batch
+        
+    Returns:
+        Dictionary with document IDs as keys and document data as values
+    """
+    documents = {}
+    doc_count = 0
+    batch_num = 0
+    
+    if progress_callback:
+        progress_callback(f"Exporting collection: {collection_name}")
+    
+    # Start with the first batch
+    query = collection_ref.order_by('__name__').limit(batch_size)
+    
+    while True:
+        batch_num += 1
+        
+        # Stream with retry configuration
+        docs = list(query.stream(retry=DEFAULT_RETRY))
+        
+        if not docs:
+            break
+        
+        if progress_callback and batch_num % 5 == 0:
+            progress_callback(f"  → Processing batch {batch_num} ({doc_count} docs so far)...")
+        
+        for doc in docs:
+            doc_data = doc.to_dict()
+            
+            # Convert Firestore-specific types
+            converted_data = convert_firestore_value(doc_data)
+            
+            # Add document metadata
+            converted_data["_documentId"] = doc.id
+            converted_data["_documentPath"] = doc.reference.path
+            
+            # Check for subcollections (uses pagination recursively)
+            subcollections = doc.reference.collections()
+            subcollection_data = {}
+            
+            for subcol in subcollections:
+                subcol_name = subcol.id
+                subcol_path = f"{collection_name}/{doc.id}/{subcol_name}"
+                subcollection_data[subcol_name] = export_collection_paginated(
+                    subcol,
+                    subcol_path,
+                    progress_callback,
+                    batch_size
+                )
+            
+            if subcollection_data:
+                converted_data["_subcollections"] = subcollection_data
+            
+            documents[doc.id] = converted_data
+            doc_count += 1
+        
+        # If we got fewer documents than the batch size, we've reached the end
+        if len(docs) < batch_size:
+            break
+        
+        # Move cursor to after the last document for next batch
+        last_doc = docs[-1]
+        query = collection_ref.order_by('__name__').start_after(last_doc).limit(batch_size)
+    
+    if progress_callback:
+        progress_callback(f"  → Exported {doc_count} documents from {collection_name}")
+    
+    return documents
+
+
 def export_collection(
     collection_ref,
     collection_name: str = "",
@@ -54,6 +157,9 @@ def export_collection(
 ) -> Dict[str, Any]:
     """
     Export all documents from a collection, including subcollections.
+    
+    This is a wrapper that uses paginated export with retry logic
+    to handle large collections reliably.
     
     Args:
         collection_ref: Firestore collection reference
@@ -63,45 +169,12 @@ def export_collection(
     Returns:
         Dictionary with document IDs as keys and document data as values
     """
-    documents = {}
-    doc_count = 0
-    
-    if progress_callback:
-        progress_callback(f"Exporting collection: {collection_name}")
-    
-    for doc in collection_ref.stream():
-        doc_data = doc.to_dict()
-        
-        # Convert Firestore-specific types
-        converted_data = convert_firestore_value(doc_data)
-        
-        # Add document metadata
-        converted_data["_documentId"] = doc.id
-        converted_data["_documentPath"] = doc.reference.path
-        
-        # Check for subcollections
-        subcollections = doc.reference.collections()
-        subcollection_data = {}
-        
-        for subcol in subcollections:
-            subcol_name = subcol.id
-            subcol_path = f"{collection_name}/{doc.id}/{subcol_name}"
-            subcollection_data[subcol_name] = export_collection(
-                subcol,
-                subcol_path,
-                progress_callback
-            )
-        
-        if subcollection_data:
-            converted_data["_subcollections"] = subcollection_data
-        
-        documents[doc.id] = converted_data
-        doc_count += 1
-    
-    if progress_callback:
-        progress_callback(f"  → Exported {doc_count} documents from {collection_name}")
-    
-    return documents
+    return export_collection_paginated(
+        collection_ref,
+        collection_name,
+        progress_callback,
+        BATCH_SIZE
+    )
 
 
 def export_firestore(

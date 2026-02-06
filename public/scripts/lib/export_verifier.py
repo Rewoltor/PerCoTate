@@ -2,6 +2,8 @@
 Export Verification Library
 ============================
 Verifies that Firestore exports are complete and match the live database.
+
+Includes robust retry logic and pagination for handling large collections.
 """
 
 import firebase_admin
@@ -10,6 +12,20 @@ import json
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Callable
 from dataclasses import dataclass, field
+
+from google.api_core.retry import Retry
+from google.api_core.exceptions import DeadlineExceeded, ServiceUnavailable
+
+# Configuration for retry and pagination (matching firebase_export.py)
+DEFAULT_RETRY = Retry(
+    initial=1.0,           # Initial delay between retries (seconds)
+    maximum=60.0,          # Maximum delay between retries (seconds)
+    multiplier=2.0,        # Delay multiplier for exponential backoff
+    deadline=600.0,        # Total timeout for the operation (10 minutes)
+    predicate=lambda exc: isinstance(exc, (DeadlineExceeded, ServiceUnavailable))
+)
+
+BATCH_SIZE = 500  # Number of documents to fetch per batch
 
 
 @dataclass
@@ -29,13 +45,20 @@ class VerificationResult:
         self.success = False
 
 
-def count_documents_recursively(collection_ref, collection_name: str = "") -> Dict[str, int]:
+def count_documents_recursively(
+    collection_ref, 
+    collection_name: str = "",
+    batch_size: int = BATCH_SIZE
+) -> Dict[str, int]:
     """
     Count all documents in a collection and its subcollections.
+    
+    Uses pagination and retry logic to handle large collections.
     
     Args:
         collection_ref: Firestore collection reference
         collection_name: Name/path of the collection
+        batch_size: Number of documents to fetch per batch
         
     Returns:
         Dictionary mapping collection paths to document counts
@@ -43,15 +66,32 @@ def count_documents_recursively(collection_ref, collection_name: str = "") -> Di
     counts = {}
     doc_count = 0
     
-    for doc in collection_ref.stream():
-        doc_count += 1
+    # Use paginated streaming with retry
+    query = collection_ref.order_by('__name__').limit(batch_size)
+    
+    while True:
+        docs = list(query.stream(retry=DEFAULT_RETRY))
         
-        # Check subcollections
-        subcollections = doc.reference.collections()
-        for subcol in subcollections:
-            subcol_path = f"{collection_name}/{doc.id}/{subcol.id}" if collection_name else f"{doc.id}/{subcol.id}"
-            subcol_counts = count_documents_recursively(subcol, subcol_path)
-            counts.update(subcol_counts)
+        if not docs:
+            break
+        
+        for doc in docs:
+            doc_count += 1
+            
+            # Check subcollections
+            subcollections = doc.reference.collections()
+            for subcol in subcollections:
+                subcol_path = f"{collection_name}/{doc.id}/{subcol.id}" if collection_name else f"{doc.id}/{subcol.id}"
+                subcol_counts = count_documents_recursively(subcol, subcol_path, batch_size)
+                counts.update(subcol_counts)
+        
+        # If we got fewer documents than the batch size, we've reached the end
+        if len(docs) < batch_size:
+            break
+        
+        # Move cursor to after the last document for next batch
+        last_doc = docs[-1]
+        query = collection_ref.order_by('__name__').start_after(last_doc).limit(batch_size)
     
     counts[collection_name if collection_name else "root"] = doc_count
     return counts

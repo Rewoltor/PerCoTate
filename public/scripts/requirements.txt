@@ -3,3 +3,6 @@ firebase-admin>=6.0.0
 
 # Data manipulation for CSV conversion
 pandas>=2.0.0
+
+# Better gRPC error handling
+grpcio-status>=1.48.0
