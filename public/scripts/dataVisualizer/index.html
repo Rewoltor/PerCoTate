@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MRMC Study Dashboard | AI-Assisted Medical Annotation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
@@ -15,36 +18,36 @@
         <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo">
-                <span class="logo-icon">📊</span>
+                <span class="logo-icon">M</span>
                 <span class="logo-text">MRMC Dashboard</span>
             </div>
             <nav class="nav-menu">
                 <a href="#summary" class="nav-item active" data-section="summary">
-                    <span class="nav-icon">📈</span>
+                    <span class="nav-icon">○</span>
                     <span>Executive Summary</span>
                 </a>
                 <a href="#hypothesis" class="nav-item" data-section="hypothesis">
-                    <span class="nav-icon">🔬</span>
+                    <span class="nav-icon">◇</span>
                     <span>Hypothesis Testing</span>
                 </a>
                 <a href="#fatigue" class="nav-item" data-section="fatigue">
-                    <span class="nav-icon">🔋</span>
+                    <span class="nav-icon">▽</span>
                     <span>Fatigue Analysis</span>
                 </a>
                 <a href="#ai-interaction" class="nav-item" data-section="ai-interaction">
-                    <span class="nav-icon">🤖</span>
+                    <span class="nav-icon">□</span>
                     <span>AI Interaction</span>
                 </a>
                 <a href="#personality" class="nav-item" data-section="personality">
-                    <span class="nav-icon">🧠</span>
+                    <span class="nav-icon">◎</span>
                     <span>Personality</span>
                 </a>
                 <a href="#time" class="nav-item" data-section="time">
-                    <span class="nav-icon">⏱️</span>
+                    <span class="nav-icon">◉</span>
                     <span>Time Analysis</span>
                 </a>
                 <a href="#kl-grades" class="nav-item" data-section="kl-grades">
-                    <span class="nav-icon">🦴</span>
+                    <span class="nav-icon">▢</span>
                     <span>KL Grades</span>
                 </a>
             </nav>
@@ -60,7 +63,7 @@
             <header class="header">
                 <div class="header-content">
                     <h1>AI-Assisted Medical Annotation Study</h1>
-                    <p class="subtitle">Knee Osteoarthritis Classification | Multi-Reader Multi-Case Trial</p>
+                    <p class="subtitle">Knee Osteoarthritis Classification · Multi-Reader Multi-Case Trial</p>
                 </div>
                 <div class="header-stats">
                     <div class="stat-pill">
@@ -89,7 +92,6 @@
                     <div class="cards-grid">
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon control">👤</span>
                                 <span class="metric-label">Control Group</span>
                             </div>
                             <div class="metric-value" id="control-accuracy">--</div>
@@ -97,7 +99,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon experimental">🤖</span>
                                 <span class="metric-label">Experimental Group</span>
                             </div>
                             <div class="metric-value" id="experimental-accuracy">--</div>
@@ -105,7 +106,6 @@
                         </div>
                         <div class="card metric-card highlight">
                             <div class="metric-header">
-                                <span class="metric-icon">📊</span>
                                 <span class="metric-label">AI Impact</span>
                             </div>
                             <div class="metric-value positive" id="accuracy-diff">--</div>
@@ -113,7 +113,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon">🎯</span>
                                 <span class="metric-label">AI Model Accuracy</span>
                             </div>
                             <div class="metric-value" id="ai-accuracy">--</div>
@@ -195,7 +194,7 @@
                             <h3>AI Benefits Persist</h3>
                             <p class="hypothesis-desc">The benefit of AI persists in later phases after crossover.</p>
                             <div class="hypothesis-result">
-                                <p class="pending-message">⏳ Awaiting Phase 2 data collection (30-day washout period)
+                                <p class="pending-message">Awaiting Phase 2 data collection (30-day washout period)
                                 </p>
                             </div>
                         </div>
@@ -206,7 +205,7 @@
                 <section id="fatigue" class="section">
                     <h2 class="section-title">Fatigue Analysis</h2>
                     <div class="insight-banner">
-                        <span class="insight-icon">💡</span>
+                        <span class="insight-icon">i</span>
                         <p><strong>Key Finding:</strong> Performance drops <span id="fatigue-drop">--</span> from first
                             10 to last 10 trials. High Neuroticism participants show less fatigue.</p>
                     </div>
@@ -260,7 +259,6 @@
                     <div class="cards-grid">
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon warning">⚠️</span>
                                 <span class="metric-label">Over-reliance Rate</span>
                             </div>
                             <div class="metric-value" id="overreliance-rate">--</div>
@@ -268,7 +266,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon success">✅</span>
                                 <span class="metric-label">Effective Use Rate</span>
                             </div>
                             <div class="metric-value" id="effective-rate">--</div>
@@ -276,7 +273,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon">🤝</span>
                                 <span class="metric-label">AI Agreement Rate</span>
                             </div>
                             <div class="metric-value" id="agreement-rate">--</div>
@@ -284,7 +280,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon">🔄</span>
                                 <span class="metric-label">Decision Reversal</span>
                             </div>
                             <div class="metric-value" id="reversal-rate">--</div>
@@ -298,7 +293,7 @@
                     </div>
 
                     <div class="insight-banner info">
-                        <span class="insight-icon">📊</span>
+                        <span class="insight-icon">↑</span>
                         <p><strong>AI Improvement:</strong> Accuracy improved from <span id="ai-before">--</span>
                             (before AI) to <span id="ai-after">--</span> (after AI) — p &lt; 0.001</p>
                     </div>
@@ -344,7 +339,7 @@
 
                     <!-- Key Finding: Neuroticism vs Fatigue -->
                     <div class="insight-banner success">
-                        <span class="insight-icon">🔬</span>
+                        <span class="insight-icon">✓</span>
                         <p><strong>Key Finding:</strong> High neuroticism participants show significantly lower fatigue
                             drop-off. <span id="neuroticism-finding-detail">--</span></p>
                     </div>
@@ -362,7 +357,6 @@
                     <div class="cards-grid two-col">
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon control">👤</span>
                                 <span class="metric-label">Control Avg Time</span>
                             </div>
                             <div class="metric-value" id="control-time">--</div>
@@ -370,7 +364,6 @@
                         </div>
                         <div class="card metric-card">
                             <div class="metric-header">
-                                <span class="metric-icon experimental">🤖</span>
                                 <span class="metric-label">Experimental Avg Time</span>
                             </div>
                             <div class="metric-value" id="experimental-time">--</div>
@@ -379,7 +372,7 @@
                     </div>
 
                     <div class="insight-banner warning">
-                        <span class="insight-icon">⏱️</span>
+                        <span class="insight-icon">!</span>
                         <p><strong>Trade-off:</strong> AI assistance increases accuracy by <span
                                 id="time-acc-gain">--</span> but takes <span id="time-increase">--</span> longer per
                             trial.</p>
@@ -397,7 +390,7 @@
                     <p class="section-subtitle">Kellgren-Lawrence osteoarthritis severity scale (0-4)</p>
 
                     <div class="insight-banner info">
-                        <span class="insight-icon">ℹ️</span>
+                        <span class="insight-icon">i</span>
                         <p><strong>Note:</strong> KL Grade 1 (Doubtful) images are missing from the dataset. AI provides
                             greatest benefit for Grade 2 (Mild).</p>
                     </div>

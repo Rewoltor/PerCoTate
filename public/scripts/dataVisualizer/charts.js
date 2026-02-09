@@ -7,51 +7,54 @@ const Charts = {
     // Chart instances registry
     instances: {},
 
-    // Default chart options
+    // Default chart options - Professional light theme
     defaultOptions: {
         responsive: true,
         maintainAspectRatio: true,
         plugins: {
             legend: {
                 labels: {
-                    color: '#94a3b8',
-                    font: { family: 'Inter, sans-serif', size: 12 }
+                    color: '#5c5c5c',
+                    font: { family: 'Inter, sans-serif', size: 12, weight: 500 }
                 }
             },
             tooltip: {
-                backgroundColor: 'rgba(30, 41, 59, 0.95)',
-                titleColor: '#f1f5f9',
-                bodyColor: '#94a3b8',
-                borderColor: 'rgba(255, 255, 255, 0.1)',
+                backgroundColor: '#ffffff',
+                titleColor: '#1a1a1a',
+                bodyColor: '#5c5c5c',
+                borderColor: '#e0e0e0',
                 borderWidth: 1,
                 padding: 12,
-                cornerRadius: 8,
-                titleFont: { family: 'Inter, sans-serif', weight: 600 },
-                bodyFont: { family: 'Inter, sans-serif' }
+                cornerRadius: 6,
+                titleFont: { family: 'Inter, sans-serif', weight: 600, size: 13 },
+                bodyFont: { family: 'Inter, sans-serif', size: 12 },
+                boxPadding: 4
             }
         },
         scales: {
             x: {
-                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#64748b', font: { family: 'Inter, sans-serif' } }
+                grid: { color: '#f0f0f0' },
+                ticks: { color: '#8a8a8a', font: { family: 'Inter, sans-serif', size: 11 } },
+                border: { color: '#e0e0e0' }
             },
             y: {
-                grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                ticks: { color: '#64748b', font: { family: 'Inter, sans-serif' } }
+                grid: { color: '#f0f0f0' },
+                ticks: { color: '#8a8a8a', font: { family: 'Inter, sans-serif', size: 11 } },
+                border: { color: '#e0e0e0' }
             }
         }
     },
 
-    // Color palette
+    // Color palette - Professional muted tones
     colors: {
-        control: '#3b82f6',
-        experimental: '#8b5cf6',
-        ai: '#10b981',
-        warning: '#f59e0b',
-        error: '#ef4444',
-        info: '#06b6d4',
-        gradient1: 'rgba(59, 130, 246, 0.8)',
-        gradient2: 'rgba(139, 92, 246, 0.8)'
+        control: '#1a73e8',
+        experimental: '#5f6368',
+        ai: '#1e8e3e',
+        warning: '#e37400',
+        error: '#d93025',
+        info: '#1a73e8',
+        gradient1: 'rgba(26, 115, 232, 0.7)',
+        gradient2: 'rgba(95, 99, 104, 0.7)'
     },
 
     /**
@@ -109,10 +112,10 @@ const Charts = {
                     label: 'Accuracy (%)',
                     data: [controlAcc, expInitialAcc, expFinalAcc, aiAcc],
                     backgroundColor: [
-                        this.colors.control,
-                        'rgba(139, 92, 246, 0.5)',
-                        this.colors.experimental,
-                        this.colors.ai
+                        'rgba(26, 115, 232, 0.8)',
+                        'rgba(95, 99, 104, 0.4)',
+                        'rgba(95, 99, 104, 0.8)',
+                        'rgba(30, 142, 62, 0.8)'
                     ],
                     borderColor: [
                         this.colors.control,
@@ -170,7 +173,7 @@ const Charts = {
                         label: 'Control Group',
                         data: controlByBlock,
                         borderColor: this.colors.control,
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        backgroundColor: 'rgba(26, 115, 232, 0.08)',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 6,
@@ -180,7 +183,7 @@ const Charts = {
                         label: 'Experimental Group',
                         data: expByBlock,
                         borderColor: this.colors.experimental,
-                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        backgroundColor: 'rgba(95, 99, 104, 0.08)',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 6,
@@ -229,7 +232,7 @@ const Charts = {
                         label: 'AI Agreement Rate',
                         data: trustByBlock,
                         borderColor: this.colors.ai,
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        backgroundColor: 'rgba(30, 142, 62, 0.08)',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 6,
@@ -239,7 +242,7 @@ const Charts = {
                         label: 'Decision Reversal Rate',
                         data: reversalByBlock,
                         borderColor: this.colors.warning,
-                        backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                        backgroundColor: 'rgba(227, 116, 0, 0.08)',
                         fill: true,
                         tension: 0.3,
                         pointRadius: 6,
@@ -316,10 +319,10 @@ const Charts = {
                     label: 'Correlation with Accuracy (r)',
                     data: correlations,
                     backgroundColor: correlations.map(r =>
-                        r >= 0 ? 'rgba(16, 185, 129, 0.7)' : 'rgba(239, 68, 68, 0.7)'
+                        r >= 0 ? 'rgba(30, 142, 62, 0.7)' : 'rgba(217, 48, 37, 0.7)'
                     ),
                     borderColor: correlations.map(r =>
-                        r >= 0 ? '#10b981' : '#ef4444'
+                        r >= 0 ? '#1e8e3e' : '#d93025'
                     ),
                     borderWidth: 2,
                     borderRadius: 8
@@ -386,7 +389,7 @@ const Charts = {
                     {
                         label: 'Participants',
                         data: scatterData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                        backgroundColor: 'rgba(26, 115, 232, 0.5)',
                         borderColor: this.colors.control,
                         pointRadius: 8,
                         pointHoverRadius: 10
@@ -554,7 +557,7 @@ const Charts = {
                     {
                         label: 'Participants',
                         data: scatterData,
-                        backgroundColor: 'rgba(239, 68, 68, 0.6)',
+                        backgroundColor: 'rgba(217, 48, 37, 0.5)',
                         borderColor: this.colors.error,
                         pointRadius: 8,
                         pointHoverRadius: 10
