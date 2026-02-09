@@ -82,6 +82,9 @@ public/dataset/
 # Sensitive Documents
 public/DataProtection.pdf
 
+# Data Visualizer outputs (contains sensitive exported data)
+public/scripts/outputs/
+
 # ============================================================================
 # ADDITIONAL SECURITY & SENSITIVE FILES
 # ============================================================================
