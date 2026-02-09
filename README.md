@@ -168,6 +168,34 @@ This research utilizes the **Knee Osteoarthritis Severity Grading Dataset**.
 
 *Note: The actual image dataset is not included in this repository due to size and licensing. Please download it from the source above if needed.*
 
+---
+
+## 📊 MRMC Study Dashboard
+
+A standalone web-based visualization dashboard for analyzing the results of the study.
+
+### Features
+
+- **Executive Summary**: Key metrics, accuracy comparison charts
+- **Hypothesis Testing**: H1 (AI improves accuracy) ★ Supported, H2 (Personality predictors), H3 (Persistence)
+- **Fatigue Analysis**: Accuracy by trial block, drop-off statistics
+- **AI Interaction Patterns**: Over-reliance, effective use, agreement rates
+- **Personality Analysis**: Big Five correlations, Neuroticism × Fatigue (r = 0.33)
+- **Time Analysis**: Response time comparison with linear regression
+- **KL Grade Breakdown**: Accuracy by osteoarthritis severity
+
+### Quick Start
+
+```bash
+cd public/scripts
+npx serve -p 8888
+```
+
+Then open: **http://localhost:8888/dataVisualizer/**
+
+
+📖 **Full documentation**: See [`public/scripts/dataVisualizer/README.md`](public/scripts/dataVisualizer/README.md)
+
 ## 📦 Available Scripts
 
 | Command | Description |
@@ -186,7 +214,9 @@ PerCoTate/
 ├── public/
 │   ├── CognitiveAssets/      # IQ test images (not in repo)
 │   ├── videos/                # Training module videos
-│   └── scripts/               # Python data processing scripts
+│   └── scripts/               # Data processing and visualization
+│       ├── dataVisualizer/    # 📊 MRMC Study Dashboard (see README)
+│       └── outputs/           # Exported CSV data
 ├── src/
 │   ├── components/
 │   │   ├── annotation/        # AI trial components
