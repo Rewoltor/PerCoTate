@@ -186,12 +186,13 @@ A standalone web-based visualization dashboard for analyzing the results of the 
 
 ### Quick Start
 
+The dashboard is served alongside the main application:
+
 ```bash
-cd public/scripts
-npx serve -p 8888
+npm run dev
 ```
 
-Then open: **http://localhost:8888/dataVisualizer/**
+Then open: **http://localhost:5173/scripts/dataVisualizer/index.html**
 
 
 📖 **Full documentation**: See [`public/scripts/dataVisualizer/README.md`](public/scripts/dataVisualizer/README.md)

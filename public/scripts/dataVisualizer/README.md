@@ -12,21 +12,23 @@ This dashboard visualizes Phase 1 results from the knee osteoarthritis annotatio
 
 ### Running Locally
 
-Navigate to the `public/scripts/` directory and start a local server:
+From the **project root** (`PerCoTate/`), start the Vite development server:
 
 ```bash
-cd public/scripts
-npx serve -p 8888
+npm run dev
 ```
 
-Then open: **http://localhost:8888/dataVisualizer/**
+Then open: **http://localhost:5173/scripts/dataVisualizer/index.html**
+
+> **Note**: The dashboard is served as part of the main application via Vite's static file serving from the `public/` directory.
 
 ### Data Requirements
 
 The dashboard loads data from:
 ```
-/outputs/csv/export_YYYY.MM.DD_HH:MM_N/participants.csv
+../outputs/csv/export_YYYY.MM.DD_HH:MM_N/participants.csv
 ```
+(Relative path from `dataVisualizer/` to the `scripts/outputs/` folder)
 
 Update the `DATA_PATH` in `dataLoader.js` if your export folder differs.
 
@@ -137,8 +139,8 @@ dataVisualizer/
 - Check browser console for 404 errors
 
 ### CSV not loading
-- Ensure the server is running from `public/scripts/` directory
-- The path must be relative to the server root (`/outputs/...`)
+- Ensure the Vite dev server is running from the project root (`npm run dev`)
+- The path is relative from `dataVisualizer/` to `../outputs/...`
 
 ### Charts not rendering
 - Check browser console for JavaScript errors
