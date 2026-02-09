@@ -5,7 +5,8 @@
 
 const DataLoader = {
     // Configuration - absolute path from server root (scripts directory)
-    DATA_PATH: '/outputs/csv/export_2026.02.06_11:11_1/participants.csv',
+    DATA_PATH: '../outputs/csv/export_2026.02.06_11:11_1/participants.csv',
+
 
     /**
      * Load and parse the CSV data
