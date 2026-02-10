@@ -60,43 +60,43 @@
         <!-- Main Content -->
         <main class="main-content">
             <!-- Header -->
-            <header class="header">
-                <div class="header-content">
-                    <h1>AI-Assisted Medical Annotation Study</h1>
-                    <p class="subtitle">Knee Osteoarthritis Classification · Multi-Reader Multi-Case Trial</p>
-                </div>
-                <div class="header-stats">
-                    <div class="stat-pill">
-                        <span class="stat-value" id="total-participants">--</span>
-                        <span class="stat-label">Participants</span>
+            <header class="header" id="main-header">
+                <div class="header-top">
+                    <div class="header-content">
+                        <h1>AI-Assisted Medical Annotation Study</h1>
+                        <p class="subtitle">Knee Osteoarthritis Classification · Multi-Reader Multi-Case Trial</p>
                     </div>
-                    <div class="stat-pill">
-                        <span class="stat-value" id="total-trials">--</span>
-                        <span class="stat-label">Trials</span>
+                    <div class="header-stats">
+                        <div class="stat-pill">
+                            <span class="stat-value" id="total-participants">--</span>
+                            <span class="stat-label">Participants</span>
+                        </div>
+                        <div class="stat-pill">
+                            <span class="stat-value" id="total-trials">--</span>
+                            <span class="stat-label">Trials</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="filter-bar" class="filter-row hidden">
+                    <div class="filter-group">
+                        <span class="filter-label">Phase</span>
+                        <div class="phase-toggle" id="phase-toggle">
+                            <button class="phase-seg" data-phase="1">Stage 1</button>
+                            <button class="phase-seg" data-phase="2">Stage 2</button>
+                            <div class="phase-seg-indicator"></div>
+                        </div>
+                        <button class="show-all-link active" id="show-all-btn" data-phase="all">Show All</button>
+                    </div>
+                    <div class="filter-separator"></div>
+                    <div class="filter-group">
+                        <span class="filter-label">Cohort</span>
+                        <select class="cohort-dropdown" id="cohort-dropdown">
+                            <option value="all">All Cohorts</option>
+                            <!-- Populated dynamically by app.js -->
+                        </select>
                     </div>
                 </div>
             </header>
-
-            <!-- Filter Bar -->
-            <div id="filter-bar" class="filter-bar hidden">
-                <div class="filter-group">
-                    <span class="filter-label">Phase</span>
-                    <div class="phase-toggle" id="phase-toggle">
-                        <button class="phase-seg" data-phase="1">Stage 1</button>
-                        <button class="phase-seg" data-phase="2">Stage 2</button>
-                        <div class="phase-seg-indicator"></div>
-                    </div>
-                    <button class="show-all-link active" id="show-all-btn" data-phase="all">Show All</button>
-                </div>
-                <div class="filter-separator"></div>
-                <div class="filter-group">
-                    <span class="filter-label">Cohort</span>
-                    <select class="cohort-dropdown" id="cohort-dropdown">
-                        <option value="all">All Cohorts</option>
-                        <!-- Populated dynamically by app.js -->
-                    </select>
-                </div>
-            </div>
 
             <!-- Loading State -->
             <div id="loading-screen" class="loading-screen">
