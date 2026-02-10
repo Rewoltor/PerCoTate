@@ -250,6 +250,165 @@ body {
     font-weight: 400;
 }
 
+/* === Filter Bar === */
+.filter-bar {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    border-bottom: 1px solid var(--border-color);
+    padding: var(--space-md) var(--space-2xl);
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+    z-index: 49;
+}
+
+.filter-group {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+}
+
+.filter-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-right: var(--space-xs);
+    white-space: nowrap;
+}
+
+/* --- Phase Segmented Toggle --- */
+.phase-toggle {
+    display: flex;
+    position: relative;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 3px;
+}
+
+.phase-seg {
+    position: relative;
+    z-index: 2;
+    padding: 6px 20px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color 0.2s ease;
+    white-space: nowrap;
+    outline: none;
+}
+
+.phase-seg:hover {
+    color: var(--text-primary);
+}
+
+.phase-seg.active {
+    color: #ffffff;
+}
+
+/* Sliding indicator behind active segment */
+.phase-seg-indicator {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    height: calc(100% - 6px);
+    background: var(--accent-primary);
+    border-radius: 6px;
+    transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1;
+    pointer-events: none;
+}
+
+/* When no segment is active (Show All mode), hide indicator */
+.phase-toggle:not(.has-selection) .phase-seg-indicator {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.phase-toggle.has-selection .phase-seg-indicator {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+/* Move indicator to second segment */
+.phase-toggle.seg-2 .phase-seg-indicator {
+    transform: translateX(100%);
+}
+
+/* --- Show All Link --- */
+.show-all-link {
+    padding: 6px 12px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+    outline: none;
+    text-decoration: none;
+}
+
+.show-all-link:hover {
+    color: var(--accent-primary);
+    background: rgba(66, 133, 244, 0.06);
+}
+
+.show-all-link.active {
+    color: var(--accent-primary);
+    background: rgba(66, 133, 244, 0.1);
+    font-weight: 600;
+}
+
+/* --- Cohort Dropdown --- */
+.cohort-dropdown {
+    padding: 7px 32px 7px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%235c5c5c' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    min-width: 140px;
+}
+
+.cohort-dropdown:hover {
+    border-color: var(--accent-secondary);
+}
+
+.cohort-dropdown:focus {
+    border-color: var(--accent-primary);
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.12);
+}
+
+.filter-separator {
+    width: 1px;
+    height: 28px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
 /* === Loading Screen === */
 .loading-screen {
     display: flex;

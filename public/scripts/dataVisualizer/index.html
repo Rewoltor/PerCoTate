@@ -77,6 +77,27 @@
                 </div>
             </header>
 
+            <!-- Filter Bar -->
+            <div id="filter-bar" class="filter-bar hidden">
+                <div class="filter-group">
+                    <span class="filter-label">Phase</span>
+                    <div class="phase-toggle" id="phase-toggle">
+                        <button class="phase-seg" data-phase="1">Stage 1</button>
+                        <button class="phase-seg" data-phase="2">Stage 2</button>
+                        <div class="phase-seg-indicator"></div>
+                    </div>
+                    <button class="show-all-link active" id="show-all-btn" data-phase="all">Show All</button>
+                </div>
+                <div class="filter-separator"></div>
+                <div class="filter-group">
+                    <span class="filter-label">Cohort</span>
+                    <select class="cohort-dropdown" id="cohort-dropdown">
+                        <option value="all">All Cohorts</option>
+                        <!-- Populated dynamically by app.js -->
+                    </select>
+                </div>
+            </div>
+
             <!-- Loading State -->
             <div id="loading-screen" class="loading-screen">
                 <div class="loader"></div>

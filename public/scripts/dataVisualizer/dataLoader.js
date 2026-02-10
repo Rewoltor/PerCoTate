@@ -73,6 +73,18 @@ const DataLoader = {
             const trialIdMatch = trial.trial_id ? trial.trial_id.match(/trial_(\d+)/) : null;
             trial.trial_number = trialIdMatch ? parseInt(trialIdMatch[1], 10) : 1;
             trial.trialBlock = Math.ceil(trial.trial_number / 10);
+
+            // Extract phase number from current_phase (e.g., 'phase1_completed' -> 1)
+            const phaseMatch = trial.current_phase ? trial.current_phase.match(/phase(\d+)/) : null;
+            trial.phase = phaseMatch ? parseInt(phaseMatch[1], 10) : null;
+
+            // Compute cohort date from trial_start_time (epoch ms -> 'YYYY-MM-DD')
+            if (trial.trial_start_time) {
+                const d = new Date(trial.trial_start_time);
+                trial.cohortDate = d.toISOString().split('T')[0];
+            } else {
+                trial.cohortDate = null;
+            }
         });
 
         // Group by participant
