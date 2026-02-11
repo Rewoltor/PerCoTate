@@ -39,6 +39,8 @@ const App = {
             // Setup navigation
             this.setupNavigation();
 
+            // Setup AI reliance metric selector
+            this.setupAIRelianceSelector();
             // Hide loading, show content and filter bar
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
@@ -414,6 +416,47 @@ const App = {
 
         this.setText('time-acc-gain', accGain.toFixed(1) + '%');
         this.setText('time-increase', timeIncrease.toFixed(0) + '%');
+    },
+
+    /**
+     * Setup AI Reliance chart metric selector
+     */
+    setupAIRelianceSelector() {
+        const selector = document.getElementById('ai-reliance-selector');
+        if (!selector) return;
+
+        const toggleButtons = selector.querySelectorAll('.metric-toggle-btn');
+        const actionButton = selector.querySelector('.metric-action-btn');
+
+        // Helper to get currently active metrics
+        const getActiveMetrics = () => {
+            return Array.from(toggleButtons)
+                .filter(btn => btn.classList.contains('active'))
+                .map(btn => btn.getAttribute('data-metric'));
+        };
+
+        // Handle Toggle Clicks
+        toggleButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                btn.classList.toggle('active');
+                const activeMetrics = getActiveMetrics();
+                Charts.renderAIRelianceChart(this.filteredData, activeMetrics);
+            });
+        });
+
+        // Handle "Reset / Show All" Click
+        if (actionButton) {
+            actionButton.addEventListener('click', () => {
+                // Activate all buttons
+                toggleButtons.forEach(btn => btn.classList.add('active'));
+
+                // Render with all metrics
+                // Passing 'all' string is supported by the chart renderer logic I will update
+                // or I can pass the full array.
+                // Let's pass 'all' as a convention for "everything".
+                Charts.renderAIRelianceChart(this.filteredData, 'all');
+            });
+        }
     },
 
     /**

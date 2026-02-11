@@ -158,6 +158,9 @@ const DataLoader = {
 
         // Compute derived metrics
         Object.values(participants).forEach(p => {
+            // Sort trials chronologically by end time (when trial finished) as requested
+            p.trials.sort((a, b) => (a.trial_end_time || 0) - (b.trial_end_time || 0));
+
             p.accuracy = p.correctCount / p.totalTrials;
             p.avgTime = p.totalTime / p.totalTrials;
             p.changeRate = p.changedCount / p.totalTrials;
@@ -296,5 +299,40 @@ const DataLoader = {
             if (block.length === 0) return 0;
             return block.reduce((a, b) => a + b, 0) / block.length * 100;
         });
+    },
+
+    /**
+     * Get AI reliance metrics by trial block (experimental group)
+     * @param {Array} trials - Experimental trials
+     * @returns {Object} Per-block rates for AI agreement, initial/final accuracy, revert rate
+     */
+    getAIRelianceByBlock(trials) {
+        const blocks = Array.from({ length: 5 }, () => ({
+            aiAgree: [], initialCorrect: [], finalCorrect: [], reverted: []
+        }));
+
+        trials.forEach(trial => {
+            if (trial.final_decision === null && trial.final_decision === undefined) return;
+            const idx = Math.min(trial.trialBlock - 1, 4);
+            if (idx < 0) return;
+
+            blocks[idx].aiAgree.push(trial.agreesWithAI ? 1 : 0);
+            blocks[idx].initialCorrect.push(trial.isInitialCorrect ? 1 : 0);
+            blocks[idx].finalCorrect.push(trial.isFinalCorrect ? 1 : 0);
+            blocks[idx].reverted.push(
+                (trial.reverted_decision === true ||
+                    trial.reverted_decision === 'True' ||
+                    trial.reverted_decision === 'true') ? 1 : 0
+            );
+        });
+
+        const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length * 100 : 0;
+
+        return {
+            aiAgreement: blocks.map(b => avg(b.aiAgree)),
+            initialAccuracy: blocks.map(b => avg(b.initialCorrect)),
+            finalAccuracy: blocks.map(b => avg(b.finalCorrect)),
+            revertRate: blocks.map(b => avg(b.reverted))
+        };
     }
 };

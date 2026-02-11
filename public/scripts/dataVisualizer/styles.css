@@ -565,6 +565,99 @@ body {
     letter-spacing: 0.02em;
 }
 
+.chart-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 4px;
+}
+
+.chart-header-row .chart-title {
+    margin-bottom: 0;
+}
+
+/* === Metric Selector (Pill Buttons) === */
+.metric-selector {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 4px 12px;
+}
+
+.metric-separator {
+    width: 1px;
+    height: 16px;
+    background-color: var(--border-color);
+    margin: 0 4px;
+}
+
+.metric-action-btn {
+    padding: 4px 8px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: color 0.2s;
+}
+
+.metric-action-btn:hover {
+    color: var(--accent-primary);
+}
+
+.metric-toggle-btn {
+    padding: 6px 14px;
+    border: 1px solid transparent;
+    border-radius: 16px;
+    background: transparent;
+    color: var(--text-muted);
+    font-family: 'Inter', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    outline: none;
+    position: relative;
+}
+
+.metric-toggle-btn:hover {
+    background: rgba(0, 0, 0, 0.03);
+    color: var(--text-primary);
+}
+
+/* Active State Using Custom Color Property */
+.metric-toggle-btn.active {
+    font-weight: 600;
+    /* Use the color variable passed in style attribute */
+    background-color: color-mix(in srgb, var(--btn-color) 12%, transparent);
+    color: var(--btn-color);
+    border-color: var(--btn-color);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Dot indicator for active state */
+.metric-toggle-btn.active::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+    margin-right: 6px;
+    vertical-align: middle;
+    margin-bottom: 2px;
+}
+
 canvas {
     max-height: 360px;
 }

@@ -612,6 +612,93 @@ const Charts = {
     },
 
     /**
+     * AI Reliance metric config
+     */
+    aiRelianceMetrics: {
+        aiAgreement: { label: 'AI Agreement Rate', color: '#1e8e3e', bgColor: 'rgba(30, 142, 62, 0.08)' },
+        initialAccuracy: { label: 'Initial Accuracy', color: '#1a73e8', bgColor: 'rgba(26, 115, 232, 0.08)' },
+        finalAccuracy: { label: 'Final Accuracy', color: '#5f6368', bgColor: 'rgba(95, 99, 104, 0.08)' },
+        revertRate: { label: 'Revert Rate', color: '#e37400', bgColor: 'rgba(227, 116, 0, 0.08)' }
+    },
+
+    /**
+     * Render AI Reliance Over Time Chart
+     * @param {Object} data - Processed data
+     * @param {string|string[]} selectedMetrics - 'all' or array of metric keys
+     */
+    renderAIRelianceChart(data, selectedMetrics = 'all') {
+        const ctx = document.getElementById('ai-reliance-chart');
+        if (!ctx) return;
+
+        this.destroy('ai-reliance-chart');
+
+        const relianceData = DataLoader.getAIRelianceByBlock(data.experimentalTrials);
+        const labels = ['Trials 1-10', 'Trials 11-20', 'Trials 21-30', 'Trials 31-40', 'Trials 41-50'];
+
+        const datasets = [];
+        let metricsToShow = [];
+
+        if (selectedMetrics === 'all') {
+            metricsToShow = Object.keys(this.aiRelianceMetrics);
+        } else if (Array.isArray(selectedMetrics)) {
+            metricsToShow = selectedMetrics;
+        } else {
+            metricsToShow = [selectedMetrics];
+        }
+
+        metricsToShow.forEach(key => {
+            const cfg = this.aiRelianceMetrics[key];
+            if (!cfg) return; // safety check
+
+            datasets.push({
+                label: cfg.label,
+                data: relianceData[key],
+                borderColor: cfg.color,
+                backgroundColor: cfg.bgColor,
+                fill: metricsToShow.length === 1, // Only fill if single metric selected
+                tension: 0.3,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                borderWidth: metricsToShow.length > 1 ? 2.5 : 3
+            });
+        });
+
+        this.instances['ai-reliance-chart'] = new Chart(ctx, {
+            type: 'line',
+            data: { labels, datasets },
+            options: {
+                ...this.defaultOptions,
+                plugins: {
+                    ...this.defaultOptions.plugins,
+                    legend: {
+                        display: true,
+                        labels: {
+                            color: '#5c5c5c',
+                            font: { family: 'Inter, sans-serif', size: 12, weight: 500 },
+                            usePointStyle: true,
+                            pointStyle: 'circle',
+                            padding: 16
+                        }
+                    }
+                },
+                scales: {
+                    ...this.defaultOptions.scales,
+                    y: {
+                        ...this.defaultOptions.scales.y,
+                        min: 0,
+                        max: 100,
+                        title: {
+                            display: true,
+                            text: 'Rate (%)',
+                            color: '#8a8a8a'
+                        }
+                    }
+                }
+            }
+        });
+    },
+
+    /**
      * Render all charts
      * @param {Object} data - Processed data
      */
@@ -619,6 +706,7 @@ const Charts = {
         this.renderSummaryChart(data);
         this.renderFatigueChart(data);
         this.renderAITrustChart(data);
+        this.renderAIRelianceChart(data, 'all');
         this.renderPersonalityChart(data);
         this.renderNeuroticismFatigueChart(data);
         this.renderTimeAccuracyChart(data);

@@ -313,6 +313,25 @@
                         <canvas id="ai-trust-chart"></canvas>
                     </div>
 
+                    <div class="chart-container">
+                        <div class="chart-header-row">
+                            <h3 class="chart-title">AI Reliance Over Time</h3>
+                            <div class="metric-selector" id="ai-reliance-selector">
+                                <button class="metric-action-btn" data-action="all">Reset / Show All</button>
+                                <div class="metric-separator"></div>
+                                <button class="metric-toggle-btn active" data-metric="aiAgreement"
+                                    style="--btn-color: #1e8e3e">AI Agreement</button>
+                                <button class="metric-toggle-btn active" data-metric="initialAccuracy"
+                                    style="--btn-color: #1a73e8">Initial Acc.</button>
+                                <button class="metric-toggle-btn active" data-metric="finalAccuracy"
+                                    style="--btn-color: #5f6368">Final Acc.</button>
+                                <button class="metric-toggle-btn active" data-metric="revertRate"
+                                    style="--btn-color: #e37400">Revert Rate</button>
+                            </div>
+                        </div>
+                        <canvas id="ai-reliance-chart"></canvas>
+                    </div>
+
                     <div class="insight-banner info">
                         <span class="insight-icon">↑</span>
                         <p><strong>AI Improvement:</strong> Accuracy improved from <span id="ai-before">--</span>
