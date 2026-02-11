@@ -13,6 +13,13 @@ const App = {
         cohort: 'all'        // 'all' or a date string, e.g. '2026-02-05'
     },
 
+    // Image Analysis State
+    imageAnalysisState: {
+        klFilter: 'all',
+        sortBy: 'bias-fp',
+        viewMode: 'map' // 'map' or 'original'
+    },
+
     /**
      * Initialize the application
      */
@@ -41,6 +48,10 @@ const App = {
 
             // Setup AI reliance metric selector
             this.setupAIRelianceSelector();
+
+            // Setup Image Analysis filters
+            this.initImageFilters();
+
             // Hide loading, show content and filter bar
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
@@ -244,6 +255,12 @@ const App = {
 
         // === TIME ANALYSIS ===
         this.updateTime(controlParticipants, experimentalParticipants, expAcc, controlAcc);
+
+        // === IMAGE ANALYSIS ===
+        this.renderImageAnalysis();
+
+        // === IMAGE ANALYSIS ===
+        this.renderImageAnalysis();
     },
 
     /**
@@ -496,6 +513,128 @@ const App = {
     setText(id, value) {
         const el = document.getElementById(id);
         if (el) el.textContent = value;
+    },
+
+    /**
+     * Initialize Image Analysis specific filters
+     */
+    initImageFilters() {
+        const klChips = document.querySelectorAll('#img-kl-filter .filter-chip');
+        const sortSelect = document.getElementById('img-sort');
+        const viewBtns = document.querySelectorAll('#img-view-toggle .view-btn');
+
+        if (!sortSelect) return;
+
+        klChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                klChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                this.imageAnalysisState.klFilter = chip.dataset.value;
+                this.renderImageAnalysis();
+            });
+        });
+
+        sortSelect.addEventListener('change', () => {
+            this.imageAnalysisState.sortBy = sortSelect.value;
+            this.renderImageAnalysis();
+        });
+
+        if (viewBtns.length > 0) {
+            viewBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    viewBtns.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    this.imageAnalysisState.viewMode = btn.dataset.view;
+                    this.renderImageAnalysis();
+                });
+            });
+        }
+    },
+
+    /**
+     * Render Image Analysis Grid
+     */
+    renderImageAnalysis() {
+        const grid = document.getElementById('image-grid');
+        if (!grid) return;
+
+        // Get image stats from current filtered data
+        let images = DataLoader.getImagePerformance(this.filteredData.trials);
+
+        // Filter by KL
+        const kl = this.imageAnalysisState.klFilter;
+        if (kl !== 'all') {
+            images = images.filter(img => img.klGrade === parseInt(kl, 10));
+        }
+
+        // Sort
+        const sort = this.imageAnalysisState.sortBy;
+        images.sort((a, b) => {
+            if (sort === 'acc-asc') return a.stats.all.acc - b.stats.all.acc;
+            if (sort === 'acc-desc') return b.stats.all.acc - a.stats.all.acc;
+            if (sort === 'bias-fp') return b.errorBias - a.errorBias; // High positive bias first
+            if (sort === 'bias-fn') return a.errorBias - b.errorBias; // High negative bias first
+            return 0;
+        });
+
+        // Render
+        grid.innerHTML = images.map(img => {
+            const stats = img.stats;
+            // Bias color
+            let biasClass = 'neutral';
+            let biasText = 'Balanced';
+            if (img.errorBias > 0.3) { biasClass = 'bias-fp'; biasText = 'False Positives'; }
+            else if (img.errorBias < -0.3) { biasClass = 'bias-fn'; biasText = 'False Negatives'; }
+
+            const imagePath = this.imageAnalysisState.viewMode === 'original' ? img.pathOriginal : img.pathMap;
+
+            // AI Prediction Text
+            const aiPredText = img.aiPrediction == 1 ? "Positive (OA)" : "Negative (Healthy)";
+            const aiConfPercent = (img.aiConfidence * 100).toFixed(1) + "%";
+            // Check if AI was correct
+            const aiCorrect = img.aiPrediction == img.groundTruth;
+            const aiClass = aiCorrect ? "ai-correct" : "ai-wrong";
+
+            return `
+                <div class="image-card">
+                    <div class="image-top-bar">
+                        <div class="kl-pill grade${img.klGrade}">KL ${img.klGrade}</div>
+                    </div>
+                    <div class="image-preview">
+                        <img src="${imagePath}" alt="${img.name}" loading="lazy">
+                    </div>
+                    <div class="image-stats">
+                        <div class="ai-info-row ${aiClass}">
+                            <span class="ai-label">AI:</span>
+                            <span class="ai-value">${aiPredText}</span>
+                            <span class="ai-conf">(${aiConfPercent})</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">Accuracy</span>
+                            <span class="stat-val heading">${stats.all.acc.toFixed(0)}%</span>
+                        </div>
+                        <div class="bar-chart-mini">
+                            <div class="bar-group">
+                                <div class="bar-label">Control</div>
+                                <div class="bar-bg"><div class="bar-fill" style="width: ${stats.control.acc}%"></div></div>
+                                <div class="bar-val">${stats.control.acc.toFixed(0)}%</div>
+                            </div>
+                            <div class="bar-group">
+                                <div class="bar-label">Exp</div>
+                                <div class="bar-bg"><div class="bar-fill exp" style="width: ${stats.experimental.acc}%"></div></div>
+                                <div class="bar-val">${stats.experimental.acc.toFixed(0)}%</div>
+                            </div>
+                        </div>
+                        <div class="error-analysis ${biasClass}">
+                            <div class="error-type">${biasText}</div>
+                            <div class="error-detail">
+                                ${stats.all.correct}/${stats.all.n} Correct
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
     }
 };
 

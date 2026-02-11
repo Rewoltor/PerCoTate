@@ -50,6 +50,10 @@
                     <span class="nav-icon">▢</span>
                     <span>KL Grades</span>
                 </a>
+                <a href="#image-analysis" class="nav-item" data-section="image-analysis">
+                    <span class="nav-icon">▤</span>
+                    <span>Image Analysis</span>
+                </a>
             </nav>
             <div class="sidebar-footer">
                 <div class="phase-badge">Phase 1 Results</div>
@@ -461,6 +465,45 @@
                             <span class="kl-badge grade4">4</span>
                             <span>Severe</span>
                         </div>
+                    </div>
+                </section>
+
+                <!-- Image Analysis -->
+                <section id="image-analysis" class="section">
+                    <h2 class="section-title">Image Analysis</h2>
+                    <p class="section-subtitle">Detailed performance breakdown by specific image case</p>
+
+                    <div class="filter-bar-secondary">
+                        <div class="filter-group-sm">
+                            <span class="filter-label-sm">Filter by KL Grade:</span>
+                            <div class="filter-chips" id="img-kl-filter">
+                                <button class="filter-chip active" data-value="all">All</button>
+                                <button class="filter-chip" data-value="0">0</button>
+                                <button class="filter-chip" data-value="2">2</button>
+                                <button class="filter-chip" data-value="3">3</button>
+                                <button class="filter-chip" data-value="4">4</button>
+                            </div>
+                        </div>
+                        <div class="filter-group-sm">
+                            <span class="filter-label-sm">Sort by:</span>
+                            <select class="sort-select" id="img-sort">
+                                <option value="bias-fp">False Positives (Bias)</option>
+                                <option value="bias-fn">False Negatives (Bias)</option>
+                                <option value="acc-asc">Lowest Accuracy</option>
+                                <option value="acc-desc">Highest Accuracy</option>
+                            </select>
+                        </div>
+                        <div class="filter-group-sm">
+                            <span class="filter-label-sm">View:</span>
+                            <div class="view-toggle" id="img-view-toggle">
+                                <button class="view-btn active" data-view="map">AI Healthmap</button>
+                                <button class="view-btn" data-view="original">Original X-Ray</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="image-grid" id="image-grid">
+                        <!-- Imaged Cards populated by JS -->
                     </div>
                 </section>
 
