@@ -485,12 +485,22 @@
                             </div>
                         </div>
                         <div class="filter-group-sm">
+                            <span class="filter-label-sm">Group:</span>
+                            <div class="filter-chips" id="img-group-filter">
+                                <button class="filter-chip active" data-value="all">All</button>
+                                <button class="filter-chip" data-value="control">Control</button>
+                                <button class="filter-chip" data-value="experimental">Experimental</button>
+                            </div>
+                        </div>
+                        <div class="filter-group-sm">
                             <span class="filter-label-sm">Sort by:</span>
                             <select class="sort-select" id="img-sort">
-                                <option value="bias-fp">False Positives (Bias)</option>
-                                <option value="bias-fn">False Negatives (Bias)</option>
                                 <option value="acc-asc">Lowest Accuracy</option>
                                 <option value="acc-desc">Highest Accuracy</option>
+                                <option value="ai-shift-desc">Highest AI Shift</option>
+                                <option value="ai-shift-asc">Lowest AI Shift</option>
+                                <option value="agree-ctrl-asc">Lowest Agreement (Control)</option>
+                                <option value="agree-exp-init-asc">Lowest Agreement (Exp Initial)</option>
                             </select>
                         </div>
                         <div class="filter-group-sm">

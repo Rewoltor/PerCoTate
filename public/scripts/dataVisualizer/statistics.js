@@ -351,6 +351,21 @@ const Statistics = {
     },
 
     /**
+     * Percent agreement for binary decisions
+     * @param {Array<number>} votes - Array of 0/1 decisions
+     * @returns {Object} { rate, n, positive, negative }
+     */
+    percentAgreement(votes) {
+        const valid = votes.filter(v => v === 0 || v === 1);
+        const n = valid.length;
+        if (n === 0) return { rate: 0, n: 0, positive: 0, negative: 0 };
+        const positive = valid.filter(v => v === 1).length;
+        const negative = n - positive;
+        const rate = Math.max(positive, negative) / n;
+        return { rate, n, positive, negative };
+    },
+
+    /**
      * Format p-value for display
      * @param {number} p
      * @returns {string}

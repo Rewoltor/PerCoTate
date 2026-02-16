@@ -16,8 +16,9 @@ const App = {
     // Image Analysis State
     imageAnalysisState: {
         klFilter: 'all',
-        sortBy: 'bias-fp',
-        viewMode: 'map' // 'map' or 'original'
+        sortBy: 'acc-asc',
+        viewMode: 'map', // 'map' or 'original'
+        groupFilter: 'all' // 'all', 'control', or 'experimental'
     },
 
     /**
@@ -255,9 +256,6 @@ const App = {
 
         // === TIME ANALYSIS ===
         this.updateTime(controlParticipants, experimentalParticipants, expAcc, controlAcc);
-
-        // === IMAGE ANALYSIS ===
-        this.renderImageAnalysis();
 
         // === IMAGE ANALYSIS ===
         this.renderImageAnalysis();
@@ -520,6 +518,7 @@ const App = {
      */
     initImageFilters() {
         const klChips = document.querySelectorAll('#img-kl-filter .filter-chip');
+        const groupChips = document.querySelectorAll('#img-group-filter .filter-chip');
         const sortSelect = document.getElementById('img-sort');
         const viewBtns = document.querySelectorAll('#img-view-toggle .view-btn');
 
@@ -530,6 +529,15 @@ const App = {
                 klChips.forEach(c => c.classList.remove('active'));
                 chip.classList.add('active');
                 this.imageAnalysisState.klFilter = chip.dataset.value;
+                this.renderImageAnalysis();
+            });
+        });
+
+        groupChips.forEach(chip => {
+            chip.addEventListener('click', () => {
+                groupChips.forEach(c => c.classList.remove('active'));
+                chip.classList.add('active');
+                this.imageAnalysisState.groupFilter = chip.dataset.value;
                 this.renderImageAnalysis();
             });
         });
@@ -572,32 +580,140 @@ const App = {
         images.sort((a, b) => {
             if (sort === 'acc-asc') return a.stats.all.acc - b.stats.all.acc;
             if (sort === 'acc-desc') return b.stats.all.acc - a.stats.all.acc;
-            if (sort === 'bias-fp') return b.errorBias - a.errorBias; // High positive bias first
-            if (sort === 'bias-fn') return a.errorBias - b.errorBias; // High negative bias first
+            if (sort === 'ai-shift-desc') return b.aiShiftAcc - a.aiShiftAcc;
+            if (sort === 'ai-shift-asc') return a.aiShiftAcc - b.aiShiftAcc;
+            if (sort === 'agree-ctrl-asc') return a.agreement.control.rate - b.agreement.control.rate;
+            if (sort === 'agree-exp-init-asc') return a.agreement.expInitial.rate - b.agreement.expInitial.rate;
             return 0;
         });
 
+        // Helper: agreement bar color class
+        const agreeClass = (rate) => {
+            if (rate >= 0.8) return 'agree-high';
+            if (rate >= 0.6) return 'agree-mid';
+            return 'agree-low';
+        };
+
         // Render
+        const gf = this.imageAnalysisState.groupFilter;
+
         grid.innerHTML = images.map(img => {
             const stats = img.stats;
-            // Bias color
-            let biasClass = 'neutral';
-            let biasText = 'Balanced';
-            if (img.errorBias > 0.3) { biasClass = 'bias-fp'; biasText = 'False Positives'; }
-            else if (img.errorBias < -0.3) { biasClass = 'bias-fn'; biasText = 'False Negatives'; }
+            const agr = img.agreement;
 
             const imagePath = this.imageAnalysisState.viewMode === 'original' ? img.pathOriginal : img.pathMap;
 
             // AI Prediction Text
             const aiPredText = img.aiPrediction == 1 ? "Positive (OA)" : "Negative (Healthy)";
             const aiConfPercent = (img.aiConfidence * 100).toFixed(1) + "%";
-            // Check if AI was correct
             const aiCorrect = img.aiPrediction == img.groundTruth;
             const aiClass = aiCorrect ? "ai-correct" : "ai-wrong";
+
+            // AI shift indicator (accuracy-based)
+            let aiShiftHtml = '';
+            if (img.stats.expFinal.n > 0 && img.stats.expInitial.n > 0) {
+                const shiftPct = img.aiShiftAcc.toFixed(0);
+                const shiftSign = img.aiShiftAcc >= 0 ? '+' : '';
+                const shiftClass = img.aiShiftAcc > 2 ? 'shift-positive' : (img.aiShiftAcc < -2 ? 'shift-negative' : 'shift-neutral');
+                aiShiftHtml = `<div class="ai-shift-indicator ${shiftClass}">AI shift: ${shiftSign}${shiftPct}%</div>`;
+            }
+
+            // Build correctness bars based on group filter
+            let correctnessBarsHtml = '';
+            if (gf === 'all') {
+                correctnessBarsHtml = `
+                    <div class="bar-group">
+                        <div class="bar-label">Control</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width: ${stats.control.acc}%"></div></div>
+                        <div class="bar-val">${stats.control.acc.toFixed(0)}%</div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label">Exp Init</div>
+                        <div class="bar-bg"><div class="bar-fill exp-init" style="width: ${stats.expInitial.acc}%"></div></div>
+                        <div class="bar-val">${stats.expInitial.acc.toFixed(0)}%</div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label">Exp Final</div>
+                        <div class="bar-bg"><div class="bar-fill exp" style="width: ${stats.expFinal.acc}%"></div></div>
+                        <div class="bar-val">${stats.expFinal.acc.toFixed(0)}%</div>
+                    </div>`;
+            } else if (gf === 'control') {
+                correctnessBarsHtml = `
+                    <div class="bar-group">
+                        <div class="bar-label">Control</div>
+                        <div class="bar-bg"><div class="bar-fill" style="width: ${stats.control.acc}%"></div></div>
+                        <div class="bar-val">${stats.control.acc.toFixed(0)}%</div>
+                    </div>`;
+            } else if (gf === 'experimental') {
+                correctnessBarsHtml = `
+                    <div class="bar-group">
+                        <div class="bar-label">Exp Init</div>
+                        <div class="bar-bg"><div class="bar-fill exp-init" style="width: ${stats.expInitial.acc}%"></div></div>
+                        <div class="bar-val">${stats.expInitial.acc.toFixed(0)}%</div>
+                    </div>
+                    <div class="bar-group">
+                        <div class="bar-label">Exp Final</div>
+                        <div class="bar-bg"><div class="bar-fill exp" style="width: ${stats.expFinal.acc}%"></div></div>
+                        <div class="bar-val">${stats.expFinal.acc.toFixed(0)}%</div>
+                    </div>`;
+            }
+
+            // Build agreement section based on group filter
+            let agreementHtml = '';
+            if (gf === 'all' || gf === 'control') {
+                if (agr.control.n > 0) {
+                    agreementHtml += `
+                    <div class="agreement-bar-group">
+                        <div class="agreement-label">Control <span class="agreement-n">(n=${agr.control.n})</span></div>
+                        <div class="agreement-bar-row">
+                            <div class="agreement-bar-bg">
+                                <div class="agreement-fill ${agreeClass(agr.control.rate)}" style="width: ${(agr.control.rate * 100).toFixed(0)}%"></div>
+                            </div>
+                            <div class="agreement-val">${(agr.control.rate * 100).toFixed(0)}%</div>
+                        </div>
+                        <div class="agreement-votes">${agr.control.positive}⊕ ${agr.control.negative}⊖</div>
+                    </div>`;
+                }
+            }
+            if (gf === 'all' || gf === 'experimental') {
+                if (agr.expInitial.n > 0) {
+                    agreementHtml += `
+                    <div class="agreement-bar-group">
+                        <div class="agreement-label">Exp Initial <span class="agreement-n">(n=${agr.expInitial.n})</span></div>
+                        <div class="agreement-bar-row">
+                            <div class="agreement-bar-bg">
+                                <div class="agreement-fill ${agreeClass(agr.expInitial.rate)}" style="width: ${(agr.expInitial.rate * 100).toFixed(0)}%"></div>
+                            </div>
+                            <div class="agreement-val">${(agr.expInitial.rate * 100).toFixed(0)}%</div>
+                        </div>
+                        <div class="agreement-votes">${agr.expInitial.positive}⊕ ${agr.expInitial.negative}⊖</div>
+                    </div>`;
+                }
+                if (agr.expFinal.n > 0) {
+                    agreementHtml += `
+                    <div class="agreement-bar-group">
+                        <div class="agreement-label">Exp Final <span class="agreement-n">(n=${agr.expFinal.n})</span></div>
+                        <div class="agreement-bar-row">
+                            <div class="agreement-bar-bg">
+                                <div class="agreement-fill ${agreeClass(agr.expFinal.rate)}" style="width: ${(agr.expFinal.rate * 100).toFixed(0)}%"></div>
+                            </div>
+                            <div class="agreement-val">${(agr.expFinal.rate * 100).toFixed(0)}%</div>
+                        </div>
+                        <div class="agreement-votes">${agr.expFinal.positive}⊕ ${agr.expFinal.negative}⊖</div>
+                    </div>`;
+                }
+            }
+
+            // Determine displayed accuracy heading
+            let headingAcc;
+            if (gf === 'control') headingAcc = stats.control.acc;
+            else if (gf === 'experimental') headingAcc = stats.expFinal.acc;
+            else headingAcc = stats.all.acc;
 
             return `
                 <div class="image-card">
                     <div class="image-top-bar">
+                        <div class="image-name-label">${img.originalName}</div>
                         <div class="kl-pill grade${img.klGrade}">KL ${img.klGrade}</div>
                     </div>
                     <div class="image-preview">
@@ -611,25 +727,16 @@ const App = {
                         </div>
                         <div class="stat-row">
                             <span class="stat-label">Accuracy</span>
-                            <span class="stat-val heading">${stats.all.acc.toFixed(0)}%</span>
+                            <span class="stat-val heading">${headingAcc.toFixed(0)}%</span>
                         </div>
-                        <div class="bar-chart-mini">
-                            <div class="bar-group">
-                                <div class="bar-label">Control</div>
-                                <div class="bar-bg"><div class="bar-fill" style="width: ${stats.control.acc}%"></div></div>
-                                <div class="bar-val">${stats.control.acc.toFixed(0)}%</div>
-                            </div>
-                            <div class="bar-group">
-                                <div class="bar-label">Exp</div>
-                                <div class="bar-bg"><div class="bar-fill exp" style="width: ${stats.experimental.acc}%"></div></div>
-                                <div class="bar-val">${stats.experimental.acc.toFixed(0)}%</div>
-                            </div>
+                        <div class="correctness-breakdown">
+                            ${correctnessBarsHtml}
                         </div>
-                        <div class="error-analysis ${biasClass}">
-                            <div class="error-type">${biasText}</div>
-                            <div class="error-detail">
-                                ${stats.all.correct}/${stats.all.n} Correct
-                            </div>
+
+                        <div class="agreement-section">
+                            <div class="agreement-header">Annotator Agreement</div>
+                            ${agreementHtml}
+                            ${(gf === 'all' || gf === 'experimental') ? aiShiftHtml : ''}
                         </div>
                     </div>
                 </div>

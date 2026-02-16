@@ -347,6 +347,7 @@ const DataLoader = {
             if (!images[imageName]) {
                 images[imageName] = {
                     name: imageName,
+                    originalName: trial.trial_image || imageName,
                     // Paths
                     pathMap: `../../dataset/map/${imageName}`,
                     pathOriginal: `../../dataset/no_map/${imageName}`,
@@ -357,37 +358,56 @@ const DataLoader = {
                     aiPrediction: trial.ai_prediction,
                     aiConfidence: trial.ai_confidence,
                     stats: {
-                        control: { n: 0, correct: 0, wrong: 0, falsePos: 0, falseNeg: 0, acc: 0 },
-                        experimental: { n: 0, correct: 0, wrong: 0, falsePos: 0, falseNeg: 0, acc: 0 },
+                        control: { n: 0, correct: 0, acc: 0 },
+                        expInitial: { n: 0, correct: 0, acc: 0 },
+                        expFinal: { n: 0, correct: 0, acc: 0 },
                         all: { n: 0, correct: 0, acc: 0 }
+                    },
+                    // Votes for inter-annotator agreement
+                    votes: {
+                        controlInitial: [],
+                        expInitial: [],
+                        expFinal: []
                     }
                 };
             }
 
             const img = images[imageName];
-            const group = trial.isControl ? 'control' : 'experimental';
-            const s = img.stats[group];
             const all = img.stats.all;
 
-            // Increment totals
-            s.n++;
-            all.n++;
-
-            if (trial.isFinalCorrect) {
-                s.correct++;
-                all.correct++;
+            if (trial.isControl) {
+                // Control group: only has initial decision
+                img.stats.control.n++;
+                all.n++;
+                if (trial.isInitialCorrect) {
+                    img.stats.control.correct++;
+                    all.correct++;
+                }
             } else {
-                s.wrong++;
-                // Analyze error type
-                // False Positive: Said 1 (Positive), Truth was 0 (Negative)
-                // False Negative: Said 0 (Negative), Truth was 1 (Positive)
-                // We use final_decision if available, else initial_decision
-                const decision = trial.final_decision !== null ? trial.final_decision : trial.initial_decision;
+                // Experimental group: track initial and final separately
+                img.stats.expInitial.n++;
+                if (trial.isInitialCorrect) {
+                    img.stats.expInitial.correct++;
+                }
+                img.stats.expFinal.n++;
+                all.n++;
+                if (trial.isFinalCorrect) {
+                    img.stats.expFinal.correct++;
+                    all.correct++;
+                }
+            }
 
-                if (decision === 1 && trial.ground_truth_binary === 0) {
-                    s.falsePos++;
-                } else if (decision === 0 && trial.ground_truth_binary === 1) {
-                    s.falseNeg++;
+            // Collect votes for agreement computation
+            if (trial.isControl) {
+                if (trial.initial_decision === 0 || trial.initial_decision === 1) {
+                    img.votes.controlInitial.push(trial.initial_decision);
+                }
+            } else {
+                if (trial.initial_decision === 0 || trial.initial_decision === 1) {
+                    img.votes.expInitial.push(trial.initial_decision);
+                }
+                if (trial.final_decision === 0 || trial.final_decision === 1) {
+                    img.votes.expFinal.push(trial.final_decision);
                 }
             }
         });
@@ -395,25 +415,29 @@ const DataLoader = {
         // Compute accuracies
         Object.values(images).forEach(img => {
             const c = img.stats.control;
-            const e = img.stats.experimental;
+            const ei = img.stats.expInitial;
+            const ef = img.stats.expFinal;
             const a = img.stats.all;
 
             c.acc = c.n > 0 ? (c.correct / c.n * 100) : 0;
-            e.acc = e.n > 0 ? (e.correct / e.n * 100) : 0;
+            ei.acc = ei.n > 0 ? (ei.correct / ei.n * 100) : 0;
+            ef.acc = ef.n > 0 ? (ef.correct / ef.n * 100) : 0;
             a.acc = a.n > 0 ? (a.correct / a.n * 100) : 0;
 
-            // Calculate "Error Bias"
-            // > 0 means tends to False Positive
-            // < 0 means tends to False Negative
-            // 0 means balanced or no errors
-            const totalErrors = c.wrong + e.wrong;
-            if (totalErrors > 0) {
-                const totalFP = c.falsePos + e.falsePos;
-                const totalFN = c.falseNeg + e.falseNeg;
-                img.errorBias = (totalFP - totalFN) / totalErrors; // -1 to 1 range
-            } else {
-                img.errorBias = 0;
-            }
+            // AI shift: difference in experimental accuracy from initial to final
+            img.aiShiftAcc = ef.acc - ei.acc; // in percentage points
+
+            // Compute inter-annotator agreement
+            img.agreement = {
+                control: Statistics.percentAgreement(img.votes.controlInitial),
+                expInitial: Statistics.percentAgreement(img.votes.expInitial),
+                expFinal: Statistics.percentAgreement(img.votes.expFinal)
+            };
+
+            // AI shift: how much AI changed experimental consensus
+            img.aiShift = img.agreement.expFinal.n > 0 && img.agreement.expInitial.n > 0
+                ? img.agreement.expFinal.rate - img.agreement.expInitial.rate
+                : 0;
         });
 
         return Object.values(images);
