@@ -18,6 +18,7 @@ import { AITrial } from './components/annotation/AITrial';
 
 import { FinalCompletion } from './pages/FinalCompletion';
 import { IntroPage } from './pages/IntroPage';
+import { RadiologistRoutes } from './radiologist/RadiologistRoutes';
 
 // Wrappers to handle navigation on completion
 const StepWrapper = ({ component: Component, nextPath }: { component: React.FC<{ onComplete: () => void }>, nextPath: string }) => {
@@ -39,6 +40,7 @@ const App: React.FC = () => {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/completion" element={<FinalCompletion />} />
+          <Route path="/radiology/*" element={<RadiologistRoutes />} />
 
           {/* Phase 1 Routes */}
           <Route path="/phase1" element={<PrivateRoute><PhaseGuard requiredPhase="phase1"><Outlet /></PhaseGuard></PrivateRoute>}>
