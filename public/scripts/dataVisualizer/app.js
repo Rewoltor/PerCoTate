@@ -56,7 +56,7 @@ const App = {
             // Hide loading, show content and filter bar
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('content').classList.remove('hidden');
-            document.getElementById('filter-bar').classList.remove('hidden');
+            document.getElementById('header-controls').classList.remove('hidden');
 
             console.log('✅ Dashboard ready!');
         } catch (error) {
@@ -517,30 +517,26 @@ const App = {
      * Initialize Image Analysis specific filters
      */
     initImageFilters() {
-        const klChips = document.querySelectorAll('#img-kl-filter .filter-chip');
-        const groupChips = document.querySelectorAll('#img-group-filter .filter-chip');
+        const klSelect = document.getElementById('img-kl-filter');
+        const groupSelect = document.getElementById('img-group-filter');
         const sortSelect = document.getElementById('img-sort');
         const viewBtns = document.querySelectorAll('#img-view-toggle .view-btn');
 
         if (!sortSelect) return;
 
-        klChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                klChips.forEach(c => c.classList.remove('active'));
-                chip.classList.add('active');
-                this.imageAnalysisState.klFilter = chip.dataset.value;
+        if (klSelect) {
+            klSelect.addEventListener('change', () => {
+                this.imageAnalysisState.klFilter = klSelect.value;
                 this.renderImageAnalysis();
             });
-        });
+        }
 
-        groupChips.forEach(chip => {
-            chip.addEventListener('click', () => {
-                groupChips.forEach(c => c.classList.remove('active'));
-                chip.classList.add('active');
-                this.imageAnalysisState.groupFilter = chip.dataset.value;
+        if (groupSelect) {
+            groupSelect.addEventListener('change', () => {
+                this.imageAnalysisState.groupFilter = groupSelect.value;
                 this.renderImageAnalysis();
             });
-        });
+        }
 
         sortSelect.addEventListener('change', () => {
             this.imageAnalysisState.sortBy = sortSelect.value;

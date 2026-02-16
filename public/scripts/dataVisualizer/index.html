@@ -65,39 +65,57 @@
         <main class="main-content">
             <!-- Header -->
             <header class="header" id="main-header">
-                <div class="header-top">
-                    <div class="header-content">
-                        <h1>AI-Assisted Medical Annotation Study</h1>
-                        <p class="subtitle">Knee Osteoarthritis Classification · Multi-Reader Multi-Case Trial</p>
-                    </div>
-                    <div class="header-stats">
-                        <div class="stat-pill">
-                            <span class="stat-value" id="total-participants">--</span>
-                            <span class="stat-label">Participants</span>
+                <div class="header-main-row">
+                    <div class="header-branding">
+                        <div class="title-group">
+                            <h1>MRMC Dashboard</h1>
+                            <div class="info-icon"
+                                title="Knee Osteoarthritis Classification · Multi-Reader Multi-Case Trial">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="16" x2="12" y2="12"></line>
+                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="stat-pill">
-                            <span class="stat-value" id="total-trials">--</span>
-                            <span class="stat-label">Trials</span>
-                        </div>
                     </div>
-                </div>
-                <div id="filter-bar" class="filter-row hidden">
-                    <div class="filter-group">
-                        <span class="filter-label">Phase</span>
-                        <div class="phase-toggle" id="phase-toggle">
-                            <button class="phase-seg" data-phase="1">Stage 1</button>
-                            <button class="phase-seg" data-phase="2">Stage 2</button>
-                            <div class="phase-seg-indicator"></div>
+
+                    <div class="header-controls hidden" id="header-controls">
+                        <!-- Phase Selector -->
+                        <div class="control-group">
+                            <span class="control-label">Phase</span>
+                            <div class="phase-toggle compact" id="phase-toggle">
+                                <button class="phase-seg" data-phase="1">S1</button>
+                                <button class="phase-seg" data-phase="2">S2</button>
+                                <div class="phase-seg-indicator"></div>
+                            </div>
+                            <button class="show-all-link active" id="show-all-btn" data-phase="all">All</button>
                         </div>
-                        <button class="show-all-link active" id="show-all-btn" data-phase="all">Show All</button>
-                    </div>
-                    <div class="filter-separator"></div>
-                    <div class="filter-group">
-                        <span class="filter-label">Cohort</span>
-                        <select class="cohort-dropdown" id="cohort-dropdown">
-                            <option value="all">All Cohorts</option>
-                            <!-- Populated dynamically by app.js -->
-                        </select>
+
+                        <div class="control-separator"></div>
+
+                        <!-- Cohort Selector -->
+                        <div class="control-group">
+                            <span class="control-label">Cohort</span>
+                            <select class="cohort-dropdown compact" id="cohort-dropdown">
+                                <option value="all">All Cohorts</option>
+                            </select>
+                        </div>
+
+                        <div class="control-separator"></div>
+
+                        <!-- Stats -->
+                        <div class="header-stats-compact">
+                            <div class="stat-item" title="Total Participants">
+                                <span class="stat-icon">👤</span>
+                                <span class="stat-value" id="total-participants">--</span>
+                            </div>
+                            <div class="stat-item" title="Total Trials">
+                                <span class="stat-icon">📊</span>
+                                <span class="stat-value" id="total-trials">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </header>
@@ -475,22 +493,22 @@
 
                     <div class="filter-bar-secondary">
                         <div class="filter-group-sm">
-                            <span class="filter-label-sm">Filter by KL Grade:</span>
-                            <div class="filter-chips" id="img-kl-filter">
-                                <button class="filter-chip active" data-value="all">All</button>
-                                <button class="filter-chip" data-value="0">0</button>
-                                <button class="filter-chip" data-value="2">2</button>
-                                <button class="filter-chip" data-value="3">3</button>
-                                <button class="filter-chip" data-value="4">4</button>
-                            </div>
+                            <span class="filter-label-sm">KL Grade:</span>
+                            <select class="sort-select" id="img-kl-filter">
+                                <option value="all">All Grades</option>
+                                <option value="0">Grade 0</option>
+                                <option value="2">Grade 2</option>
+                                <option value="3">Grade 3</option>
+                                <option value="4">Grade 4</option>
+                            </select>
                         </div>
                         <div class="filter-group-sm">
                             <span class="filter-label-sm">Group:</span>
-                            <div class="filter-chips" id="img-group-filter">
-                                <button class="filter-chip active" data-value="all">All</button>
-                                <button class="filter-chip" data-value="control">Control</button>
-                                <button class="filter-chip" data-value="experimental">Experimental</button>
-                            </div>
+                            <select class="sort-select" id="img-group-filter">
+                                <option value="all">All Groups</option>
+                                <option value="control">Control</option>
+                                <option value="experimental">Experimental</button>
+                            </select>
                         </div>
                         <div class="filter-group-sm">
                             <span class="filter-label-sm">Sort by:</span>
