@@ -23,8 +23,37 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
 
     // Annotation State
     const [isReadable, setIsReadable] = useState<boolean | null>(null);
-    const [klGrade, setKlGrade] = useState<number | null>(null);
+    const [radiologistKLGrade, setRadiologistKLGrade] = useState<number | null>(null);
     const [confidence, setConfidence] = useState<number | null>(null);
+
+    // Data from CSV
+    const [groundTruthMap, setGroundTruthMap] = useState<Record<string, number>>({});
+
+    // Load CSV on mount
+    useEffect(() => {
+        fetch(`${RADIO_CONFIG.IMAGE_BASE_PATH}predictions.csv`)
+            .then(res => res.text())
+            .then(text => {
+                const lines = text.split('\n');
+                const map: Record<string, number> = {};
+                // Skip header (index 0)
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    const cols = line.split(',');
+                    // Column 0: image (e.g. "1.png"), Column 5: ground_truth_raw (index 5)
+                    if (cols.length > 5) {
+                        const imgName = cols[0];
+                        const gt = parseFloat(cols[5]);
+                        if (!isNaN(gt)) {
+                            map[imgName] = gt;
+                        }
+                    }
+                }
+                setGroundTruthMap(map);
+            })
+            .catch(err => console.error("Failed to load predictions.csv", err));
+    }, []);
 
     const [saving, setSaving] = useState(false);
     const [startTime, setStartTime] = useState<number>(Date.now());
@@ -38,7 +67,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
 
     const TOTAL_TRIALS = RADIO_CONFIG.TOTAL_IMAGES;
 
-    const canSubmit = isReadable === false || (isReadable === true && klGrade !== null && confidence !== null);
+    const canSubmit = isReadable === false || (isReadable === true && radiologistKLGrade !== null && confidence !== null);
 
     // Check completion on mount
     useEffect(() => {
@@ -66,7 +95,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
 
         // Reset form state
         setIsReadable(null);
-        setKlGrade(null);
+        setRadiologistKLGrade(null);
         setConfidence(null);
         setStartTime(Date.now());
         setLoading(false);
@@ -100,8 +129,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
             endTime,
             duration: (endTime - startTime) / 1000,
             isReadable: isReadable!,
-            klGrade: isReadable ? (klGrade as 0 | 1 | 2 | 3 | 4) : (null as any),
+            radiologistKLGrade: isReadable ? (radiologistKLGrade as 0 | 1 | 2 | 3 | 4) : (null as any),
             confidence: isReadable ? confidence! : (null as any),
+            groundTruthRaw: groundTruthMap[`${imageId}.png`] ?? null
         };
 
         try {
@@ -254,9 +284,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                                     {[0, 1, 2, 3, 4].map(grade => (
                                         <button
                                             key={grade}
-                                            onClick={() => setKlGrade(grade)}
+                                            onClick={() => setRadiologistKLGrade(grade)}
                                             className={`aspect-square rounded-xl border-2 font-bold text-xl transition-all transform hover:scale-105
-                                                ${klGrade === grade
+                                                ${radiologistKLGrade === grade
                                                     ? 'bg-gray-900 border-gray-900 text-white shadow-lg'
                                                     : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
                                         >
@@ -272,7 +302,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         )}
 
                         {/* Step 3: Confidence */}
-                        {isReadable === true && klGrade !== null && (
+                        {isReadable === true && radiologistKLGrade !== null && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                 <h3 className="font-semibold mb-3 text-lg text-gray-700 flex items-center">
                                     3. Mennyire biztos a döntésében?
