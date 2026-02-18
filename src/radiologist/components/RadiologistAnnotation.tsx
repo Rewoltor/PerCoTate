@@ -37,7 +37,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
 
     const TOTAL_TRIALS = RADIO_CONFIG.TOTAL_IMAGES;
 
-    const canSubmit = isReadable !== null && klGrade !== null && confidence !== null;
+    const canSubmit = isReadable === false || (isReadable === true && klGrade !== null && confidence !== null);
 
     // Check completion on mount
     useEffect(() => {
@@ -96,8 +96,8 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
             endTime,
             duration: (endTime - startTime) / 1000,
             isReadable: isReadable!,
-            klGrade: klGrade as 0 | 1 | 2 | 3 | 4,
-            confidence: confidence!,
+            klGrade: isReadable ? (klGrade as 0 | 1 | 2 | 3 | 4) : (null as any),
+            confidence: isReadable ? confidence! : (null as any),
         };
 
         try {
@@ -217,7 +217,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         </div>
 
                         {/* Step 2: KL Grade */}
-                        {isReadable !== null && (
+                        {isReadable === true && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                 <h3 className="font-semibold mb-3 text-gray-700 text-lg">
                                     2. KL Fokozat
@@ -244,7 +244,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         )}
 
                         {/* Step 3: Confidence */}
-                        {isReadable !== null && klGrade !== null && (
+                        {isReadable === true && klGrade !== null && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                 <h3 className="font-semibold mb-3 text-lg text-gray-700">
                                     3. Mennyire biztos a döntésében?

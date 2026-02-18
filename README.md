@@ -170,6 +170,37 @@ This research utilizes the **Knee Osteoarthritis Severity Grading Dataset**.
 
 ---
 
+## 🩻 Radiologist Annotation Module
+
+An isolated, self-contained module for collecting expert radiologist annotations on knee X-ray images as part of the MRMC (Multi-Reader Multi-Case) study design.
+
+### What It Does
+
+Radiologists access the flow at `/radiology` and annotate **80 knee X-ray images** in randomized order. For each image they assess:
+1. **Readability** — Is the image diagnostically evaluable?
+2. **KL Grade (0–4)** — Kellgren-Lawrence osteoarthritis severity (if readable)
+3. **Confidence (1–7)** — How certain they are about their grading (if readable)
+
+### Key Design Decisions
+
+- **No authentication** — A single click starts a session with an auto-generated `RAD-XXXXX` ID
+- **Fully isolated** — Uses its own Firestore collection (`radio_participants`), context, routing, and types. No overlap with the main app
+- **Session persistence** — Progress is saved to both Firestore and `localStorage`, so radiologists can resume if interrupted
+- **Runtime safety** — A guard in `config.ts` throws at module load if collection names accidentally collide with the main app
+
+### Location
+
+| Item | Path |
+|------|------|
+| Source code | `src/radiologist/` |
+| X-ray images | `public/radioData/` (not in repo) |
+| Route entry point | `/radiology` |
+| Firestore collection | `radio_participants` |
+
+📖 **Full documentation**: See [`src/radiologist/README.md`](src/radiologist/README.md)
+
+---
+
 ## 📊 MRMC Study Dashboard
 
 A standalone web-based visualization dashboard for analyzing the results of the study.
@@ -228,6 +259,7 @@ PerCoTate/
 │   ├── hooks/                 # Custom React hooks
 │   ├── lib/                   # Firebase configuration
 │   ├── pages/                 # Main application pages
+│   ├── radiologist/           # 🩻 Isolated radiologist module (see README)
 │   ├── types/                 # TypeScript type definitions
 │   ├── utils/                 # Utility functions
 │   ├── App.tsx                # Main application component
@@ -276,6 +308,7 @@ The app uses these Firestore collections:
 | `participants` | Stores all participant data (demographics, test results, trials) |
 | `user_identity` | Maps Firebase UIDs to custom user IDs |
 | `system_stats` | Tracks system-wide statistics (user counts, etc.) |
+| `radio_participants` | Radiologist annotation data (isolated module — see `src/radiologist/`) |
 
 See `src/config.ts` for collection names.
 

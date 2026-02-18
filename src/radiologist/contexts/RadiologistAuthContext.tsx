@@ -57,6 +57,7 @@ interface RadiologistContextType {
     loading: boolean;
     startSession: () => Promise<void>;
     refreshUser: () => Promise<void>;
+    logout: () => void;
 }
 
 const RadiologistAuthContext = createContext<RadiologistContextType | undefined>(undefined);
@@ -123,8 +124,13 @@ export const RadiologistAuthProvider: React.FC<{ children: React.ReactNode }> = 
         }
     };
 
+    const logout = () => {
+        localStorage.removeItem(RADIO_CONFIG.SESSION_STORAGE_KEY);
+        setUser(null);
+    };
+
     return (
-        <RadiologistAuthContext.Provider value={{ user, loading, startSession, refreshUser }}>
+        <RadiologistAuthContext.Provider value={{ user, loading, startSession, refreshUser, logout }}>
             {!loading && children}
         </RadiologistAuthContext.Provider>
     );

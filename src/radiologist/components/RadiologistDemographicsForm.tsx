@@ -11,6 +11,13 @@ interface RadiologistDemographicsFormProps {
     onComplete: () => void;
 }
 
+const RESIDENCE_OPTIONS = [
+    'Budapest',
+    'Megyeszékhely',
+    'Város',
+    'Község / Falu',
+];
+
 const PROFESSION_OPTIONS = [
     'Radiológus',
     'Ortopéd szakorvos',
@@ -30,9 +37,18 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
     const [yearsOfExperience, setYearsOfExperience] = useState<string>('');
     const [profession, setProfession] = useState('');
     const [customProfession, setCustomProfession] = useState('');
+    const [acceptedTerms, setAcceptedTerms] = useState(false);
+    const [ageTouched, setAgeTouched] = useState(false);
+    const [expTouched, setExpTouched] = useState(false);
 
     const effectiveProfession = profession === 'Egyéb' ? customProfession : profession;
-    const canSubmit = age && residence && yearsOfExperience && effectiveProfession;
+
+    const ageNum = age ? parseInt(age) : null;
+    const expNum = yearsOfExperience ? parseInt(yearsOfExperience) : null;
+    const ageValid = ageNum !== null && ageNum >= 25 && ageNum <= 99;
+    const expValid = expNum !== null && expNum >= 0 && expNum <= 60;
+
+    const canSubmit = ageValid && residence && expValid && effectiveProfession && acceptedTerms;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -75,25 +91,35 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
                             type="number"
                             value={age}
                             onChange={(e) => setAge(e.target.value)}
-                            min="20"
-                            max="80"
-                            className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
+                            onBlur={() => setAgeTouched(true)}
+                            min="23"
+                            max="99"
+                            className={`w-full p-3 rounded-xl border-2 outline-none transition-all ${ageTouched && age && !ageValid
+                                ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                                : 'border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500'
+                                }`}
                             placeholder="pl. 35"
                             required
                         />
+                        {ageTouched && age && !ageValid && (
+                            <p className="text-red-500 text-xs mt-1">Kérjük, 23 és 99 közötti értéket adjon meg.</p>
+                        )}
                     </div>
 
                     {/* Residence */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Lakhely</label>
-                        <input
-                            type="text"
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Lakhely típusa</label>
+                        <select
                             value={residence}
                             onChange={(e) => setResidence(e.target.value)}
-                            className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
-                            placeholder="pl. Budapest"
+                            className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all bg-white"
                             required
-                        />
+                        >
+                            <option value="" disabled>Válasszon...</option>
+                            {RESIDENCE_OPTIONS.map(opt => (
+                                <option key={opt} value={opt}>{opt}</option>
+                            ))}
+                        </select>
                     </div>
 
                     {/* Years of Experience */}
@@ -103,17 +129,24 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
                             type="number"
                             value={yearsOfExperience}
                             onChange={(e) => setYearsOfExperience(e.target.value)}
+                            onBlur={() => setExpTouched(true)}
                             min="0"
                             max="60"
-                            className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all"
+                            className={`w-full p-3 rounded-xl border-2 outline-none transition-all ${expTouched && yearsOfExperience && !expValid
+                                ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
+                                : 'border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500'
+                                }`}
                             placeholder="pl. 10"
                             required
                         />
+                        {expTouched && yearsOfExperience && !expValid && (
+                            <p className="text-red-500 text-xs mt-1">Kérjük, 0 és 60 közötti értéket adjon meg.</p>
+                        )}
                     </div>
 
                     {/* Profession */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Szakma</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Szakterület</label>
                         <select
                             value={profession}
                             onChange={(e) => setProfession(e.target.value)}
@@ -136,6 +169,28 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
                                 required
                             />
                         )}
+                    </div>
+
+                    {/* Terms & Data Protection */}
+                    <div className="flex items-start gap-3">
+                        <input
+                            type="checkbox"
+                            id="acceptTerms"
+                            checked={acceptedTerms}
+                            onChange={(e) => setAcceptedTerms(e.target.checked)}
+                            className="mt-1 h-4 w-4 rounded border-gray-300 text-teal-600 focus:ring-teal-500 cursor-pointer"
+                        />
+                        <label htmlFor="acceptTerms" className="text-sm text-gray-600 cursor-pointer">
+                            Elolvastam és elfogadom az{' '}
+                            <a
+                                href="/radiologydataprotection.pdf"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-teal-600 hover:text-teal-800 underline underline-offset-2 font-medium"
+                            >
+                                adatvédelmi tájékoztatót
+                            </a>.
+                        </label>
                     </div>
 
                     <Button

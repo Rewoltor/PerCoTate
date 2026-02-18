@@ -6,7 +6,7 @@
 
 import React from 'react';
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { RadiologistAuthProvider } from './contexts/RadiologistAuthContext';
+import { RadiologistAuthProvider, useRadiologistAuth } from './contexts/RadiologistAuthContext';
 import { RadiologistLanding } from './pages/RadiologistLanding';
 import { RadiologistDemographicsForm } from './components/RadiologistDemographicsForm';
 import { RadiologistInstructions } from './pages/RadiologistInstructions';
@@ -19,30 +19,47 @@ const StepWrapper = ({ component: Component, nextPath }: { component: React.FC<{
     return <Component onComplete={() => navigate(nextPath)} />;
 };
 
+// Route guard — redirects to landing if no session exists
+const RequireSession: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { user } = useRadiologistAuth();
+    if (!user) return <Navigate to="/radiology" replace />;
+    return <>{children}</>;
+};
+
 export const RadiologistRoutes: React.FC = () => {
     return (
         <RadiologistAuthProvider>
             <Routes>
-                {/* Landing page with login/register */}
+                {/* Landing page — start session */}
                 <Route path="/" element={<RadiologistLanding />} />
 
                 {/* Demographics form */}
                 <Route path="/demographics" element={
-                    <StepWrapper component={RadiologistDemographicsForm} nextPath="/radiology/instructions" />
+                    <RequireSession>
+                        <StepWrapper component={RadiologistDemographicsForm} nextPath="/radiology/instructions" />
+                    </RequireSession>
                 } />
 
                 {/* Instructions before annotation */}
                 <Route path="/instructions" element={
-                    <StepWrapper component={RadiologistInstructions} nextPath="/radiology/annotation" />
+                    <RequireSession>
+                        <StepWrapper component={RadiologistInstructions} nextPath="/radiology/annotation" />
+                    </RequireSession>
                 } />
 
                 {/* Annotation screen */}
                 <Route path="/annotation" element={
-                    <StepWrapper component={RadiologistAnnotation} nextPath="/radiology/complete" />
+                    <RequireSession>
+                        <StepWrapper component={RadiologistAnnotation} nextPath="/radiology/complete" />
+                    </RequireSession>
                 } />
 
                 {/* Completion screen */}
-                <Route path="/complete" element={<RadiologistCompletion />} />
+                <Route path="/complete" element={
+                    <RequireSession>
+                        <RadiologistCompletion />
+                    </RequireSession>
+                } />
 
                 {/* Catch-all */}
                 <Route path="*" element={<Navigate to="/radiology" replace />} />
@@ -50,3 +67,4 @@ export const RadiologistRoutes: React.FC = () => {
         </RadiologistAuthProvider>
     );
 };
+

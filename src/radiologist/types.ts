@@ -27,7 +27,7 @@ export interface RadiologistTrialData {
     endTime: number;                  // Unix ms
     duration: number;                 // seconds
     isReadable: boolean;              // Is the image readable?
-    klGrade: 0 | 1 | 2 | 3 | 4;     // Kellgren-Lawrence scale
-    confidence: number;               // 1–7 confidence scale
+    klGrade: 0 | 1 | 2 | 3 | 4 | null; // Kellgren-Lawrence scale (null if not readable)
+    confidence: number | null;        // 1–7 confidence scale (null if not readable)
 }
 

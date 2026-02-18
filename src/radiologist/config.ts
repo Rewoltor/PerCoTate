@@ -8,7 +8,7 @@ export const RADIO_CONFIG = {
         RADIO_PARTICIPANTS: 'radio_participants',
     },
 
-    TOTAL_IMAGES: 80,
+    TOTAL_IMAGES: 50,
     IMAGE_BASE_PATH: '/radioData/',
     SESSION_STORAGE_KEY: 'radio_user_session',
 
