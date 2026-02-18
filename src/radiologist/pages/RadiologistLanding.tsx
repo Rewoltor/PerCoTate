@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 import { useRadiologistAuth } from '../contexts/RadiologistAuthContext';
 import { Card } from '../../components/ui/Card';
 import { Button } from '../../components/ui/Button';
@@ -47,6 +48,13 @@ export const RadiologistLanding: React.FC = () => {
                     <div className="bg-teal-50 border border-teal-100 rounded-xl p-3 text-sm text-teal-800 mb-6">
                         <strong>Kinek szól?</strong> Radiológusok, ortopéd szakorvosok, reumatológusok és egyéb
                         egészségügyi szakemberek számára.
+                    </div>
+
+                    <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6 flex items-start gap-3 text-left animate-pulse">
+                        <AlertTriangle className="text-red-600 shrink-0 mt-0.5" size={20} />
+                        <div className="text-sm text-red-800">
+                            <strong>Fontos:</strong> Az alkalmazás kizárólag asztali számítógépen vagy laptopon használható! Mobil eszközökön a felület nem jelenik meg megfelelően.
+                        </div>
                     </div>
 
                     <Button

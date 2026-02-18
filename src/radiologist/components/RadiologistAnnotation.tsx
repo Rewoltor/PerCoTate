@@ -218,7 +218,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         {/* Step 1: Readability */}
                         <div>
                             <h3 className="font-semibold mb-3 text-gray-700 text-lg flex items-center">
-                                1. Olvasható a kép?
+                                1. Képminőség
                                 <HelpTooltip text="Kérjük, ítélje meg, hogy a felvétel minősége (expozíció, beállítás, műtermékek hiánya) lehetővé teszi-e a megbízható diagnosztizálást." align="center" position="bottom" />
                             </h3>
                             <div className="flex gap-4">
@@ -229,7 +229,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                                             ? 'bg-teal-600 border-teal-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-teal-50'}`}
                                 >
-                                    Igen
+                                    Megfelelő
                                 </button>
                                 <button
                                     onClick={() => setIsReadable(false)}
@@ -238,7 +238,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                                             ? 'bg-teal-600 border-teal-600 text-white transform scale-[1.02]'
                                             : 'bg-white border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-teal-50'}`}
                                 >
-                                    Nem
+                                    Nem megfelelő
                                 </button>
                             </div>
                         </div>
