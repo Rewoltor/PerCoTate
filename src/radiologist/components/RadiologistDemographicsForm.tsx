@@ -11,20 +11,21 @@ interface RadiologistDemographicsFormProps {
     onComplete: () => void;
 }
 
-const RESIDENCE_OPTIONS = [
-    'Budapest',
-    'Megyeszékhely',
-    'Város',
-    'Község / Falu',
+const WORKPLACE_OPTIONS = [
+    'Magán',
+    'Állami',
+    'Egyetemi klinika',
 ];
 
 const PROFESSION_OPTIONS = [
     'Radiológus',
+    'Rezidens',
     'Ortopéd szakorvos',
     'Reumatológus',
     'Gyermekgyógyász',
     'Belgyógyász',
     'Háziorvos',
+    'Nem vagyok orvos',
     'Egyéb',
 ];
 
@@ -33,7 +34,7 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
     const [saving, setSaving] = useState(false);
 
     const [age, setAge] = useState<string>('');
-    const [residence, setResidence] = useState('');
+    const [workplaceType, setWorkplaceType] = useState('');
     const [yearsOfExperience, setYearsOfExperience] = useState<string>('');
     const [profession, setProfession] = useState('');
     const [customProfession, setCustomProfession] = useState('');
@@ -48,7 +49,7 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
     const ageValid = ageNum !== null && ageNum >= 25 && ageNum <= 99;
     const expValid = expNum !== null && expNum >= 0 && expNum <= 60;
 
-    const canSubmit = ageValid && residence && expValid && effectiveProfession && acceptedTerms;
+    const canSubmit = ageValid && workplaceType && expValid && effectiveProfession && acceptedTerms;
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -58,7 +59,7 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
         try {
             const demographics: RadiologistDemographics = {
                 age: parseInt(age),
-                residence,
+                workplaceType,
                 yearsOfExperience: parseInt(yearsOfExperience),
                 profession: effectiveProfession,
             };
@@ -90,9 +91,12 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
                         <input
                             type="number"
                             value={age}
-                            onChange={(e) => setAge(e.target.value)}
+                            onChange={(e) => {
+                                setAge(e.target.value);
+                                if (ageTouched) setAgeTouched(false); // Reset touched on change to clear error immediately while typing
+                            }}
                             onBlur={() => setAgeTouched(true)}
-                            min="23"
+                            min="25"
                             max="99"
                             className={`w-full p-3 rounded-xl border-2 outline-none transition-all ${ageTouched && age && !ageValid
                                 ? 'border-red-400 focus:border-red-500 focus:ring-1 focus:ring-red-500'
@@ -102,21 +106,21 @@ export const RadiologistDemographicsForm: React.FC<RadiologistDemographicsFormPr
                             required
                         />
                         {ageTouched && age && !ageValid && (
-                            <p className="text-red-500 text-xs mt-1">Kérjük, 23 és 99 közötti értéket adjon meg.</p>
+                            <p className="text-red-500 text-xs mt-1">Kérjük, 25 és 99 közötti értéket adjon meg.</p>
                         )}
                     </div>
 
-                    {/* Residence */}
+                    {/* Workplace Type */}
                     <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">Lakhely típusa</label>
+                        <label className="block text-sm font-bold text-gray-700 mb-2">Munkahely típusa</label>
                         <select
-                            value={residence}
-                            onChange={(e) => setResidence(e.target.value)}
+                            value={workplaceType}
+                            onChange={(e) => setWorkplaceType(e.target.value)}
                             className="w-full p-3 rounded-xl border-2 border-gray-200 focus:border-teal-500 focus:ring-1 focus:ring-teal-500 outline-none transition-all bg-white"
                             required
                         >
                             <option value="" disabled>Válasszon...</option>
-                            {RESIDENCE_OPTIONS.map(opt => (
+                            {WORKPLACE_OPTIONS.map(opt => (
                                 <option key={opt} value={opt}>{opt}</option>
                             ))}
                         </select>

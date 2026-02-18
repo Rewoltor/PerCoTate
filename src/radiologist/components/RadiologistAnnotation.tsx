@@ -6,6 +6,7 @@ import { useRadiologistAuth } from '../contexts/RadiologistAuthContext';
 import { Button } from '../../components/ui/Button';
 import { ZoomControls } from '../../components/common/ZoomControls';
 import type { RadiologistTrialData } from '../types';
+import { HelpTooltip } from '../../components/common/HelpTooltip';
 
 interface RadiologistAnnotationProps {
     onComplete: () => void;
@@ -78,6 +79,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
         }
     }, [zoom, user]);
 
+    // Invert State
+    const [isInverted, setIsInverted] = useState(false);
+
     const handleZoomIn = () => setZoom(prev => Math.min(200, prev + 25));
     const handleZoomOut = () => setZoom(prev => Math.max(100, prev - 25));
 
@@ -125,6 +129,8 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                     currentTrialIndex: newIndex,
                 }, { merge: true });
                 setCurrentTrialIndex(newIndex);
+                // Reset invert state for next image
+                setIsInverted(false);
                 await refreshUser();
             }
         } catch (err) {
@@ -153,6 +159,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                             style={{
                                 transform: `scale(${zoom / 100})`,
                                 transformOrigin: 'center center',
+                                filter: isInverted ? 'invert(1)' : 'none',
                             }}
                         >
                             {currentImageUrl ? (
@@ -169,6 +176,25 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                             )}
                         </div>
                     </div>
+
+                    {/* Invert Button */}
+                    <button
+                        onClick={() => setIsInverted(!isInverted)}
+                        className={`absolute bottom-6 right-6 p-3 rounded-full shadow-lg transition-all duration-200 z-30 flex items-center justify-center
+                            ${isInverted
+                                ? 'bg-white text-black hover:bg-gray-200'
+                                : 'bg-gray-800/80 text-white hover:bg-gray-700'
+                            }`}
+                        title="Színek invertálása"
+                    >
+                        {isInverted ? (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-sun"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+                        ) : (
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-moon"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+                        )}
+                        <span className="ml-2 font-semibold text-sm">{isInverted ? 'Normál' : 'Invertálás'}</span>
+                    </button>
+
                     <ZoomControls
                         zoom={zoom}
                         onZoomIn={handleZoomIn}
@@ -191,8 +217,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                     <div className="space-y-6">
                         {/* Step 1: Readability */}
                         <div>
-                            <h3 className="font-semibold mb-3 text-gray-700 text-lg">
+                            <h3 className="font-semibold mb-3 text-gray-700 text-lg flex items-center">
                                 1. Olvasható a kép?
+                                <HelpTooltip text="Kérjük, ítélje meg, hogy a felvétel minősége (expozíció, beállítás, műtermékek hiánya) lehetővé teszi-e a megbízható diagnosztizálást." align="center" position="bottom" />
                             </h3>
                             <div className="flex gap-4">
                                 <button
@@ -219,8 +246,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         {/* Step 2: KL Grade */}
                         {isReadable === true && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <h3 className="font-semibold mb-3 text-gray-700 text-lg">
+                                <h3 className="font-semibold mb-3 text-gray-700 text-lg flex items-center">
                                     2. KL Fokozat
+                                    <HelpTooltip text="Osztályozza a térdízületi arthrosis súlyosságát a Kellgren-Lawrence skála szerint (0: negatív, 4: súlyos)." align="left" position="bottom" />
                                 </h3>
                                 <div className="grid grid-cols-5 gap-2">
                                     {[0, 1, 2, 3, 4].map(grade => (
@@ -246,8 +274,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                         {/* Step 3: Confidence */}
                         {isReadable === true && klGrade !== null && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <h3 className="font-semibold mb-3 text-lg text-gray-700">
+                                <h3 className="font-semibold mb-3 text-lg text-gray-700 flex items-center">
                                     3. Mennyire biztos a döntésében?
+                                    <HelpTooltip text="Adja meg, mennyire biztos a választott KL fokozat helyességében. 1: nagyon bizonytalan, 7: teljesen biztos." align="right" position="bottom" />
                                 </h3>
                                 <div className="grid grid-cols-7 gap-1">
                                     {[1, 2, 3, 4, 5, 6, 7].map(num => (

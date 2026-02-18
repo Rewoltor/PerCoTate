@@ -15,7 +15,7 @@ export interface RadiologistParticipant {
 
 export interface RadiologistDemographics {
     age: number;
-    residence: string;                // Where they live
+    workplaceType: string;            // Private, State, or University
     yearsOfExperience: number;        // Years of professional experience
     profession: string;               // e.g. "Radiológus", "Ortopéd", etc.
 }
