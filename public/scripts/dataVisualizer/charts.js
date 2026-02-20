@@ -7,54 +7,60 @@ const Charts = {
     // Chart instances registry
     instances: {},
 
-    // Default chart options - Professional light theme
+    // Default chart options - Refined light theme
     defaultOptions: {
         responsive: true,
         maintainAspectRatio: true,
+        animation: {
+            duration: 800,
+            easing: 'easeOutQuart'
+        },
         plugins: {
             legend: {
                 labels: {
-                    color: '#5c5c5c',
-                    font: { family: 'Inter, sans-serif', size: 12, weight: 500 }
+                    color: '#475569',
+                    font: { family: 'Inter, sans-serif', size: 12, weight: 500 },
+                    padding: 16
                 }
             },
             tooltip: {
                 backgroundColor: '#ffffff',
-                titleColor: '#1a1a1a',
-                bodyColor: '#5c5c5c',
-                borderColor: '#e0e0e0',
+                titleColor: '#0f172a',
+                bodyColor: '#475569',
+                borderColor: '#e2e8f0',
                 borderWidth: 1,
-                padding: 12,
-                cornerRadius: 6,
+                padding: 14,
+                cornerRadius: 10,
                 titleFont: { family: 'Inter, sans-serif', weight: 600, size: 13 },
                 bodyFont: { family: 'Inter, sans-serif', size: 12 },
-                boxPadding: 4
+                boxPadding: 6,
+                caretSize: 6
             }
         },
         scales: {
             x: {
-                grid: { color: '#f0f0f0' },
-                ticks: { color: '#8a8a8a', font: { family: 'Inter, sans-serif', size: 11 } },
-                border: { color: '#e0e0e0' }
+                grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+                ticks: { color: '#94a3b8', font: { family: 'Inter, sans-serif', size: 11, weight: 500 } },
+                border: { color: '#e2e8f0' }
             },
             y: {
-                grid: { color: '#f0f0f0' },
-                ticks: { color: '#8a8a8a', font: { family: 'Inter, sans-serif', size: 11 } },
-                border: { color: '#e0e0e0' }
+                grid: { color: 'rgba(226, 232, 240, 0.6)', drawBorder: false },
+                ticks: { color: '#94a3b8', font: { family: 'Inter, sans-serif', size: 11, weight: 500 } },
+                border: { color: '#e2e8f0' }
             }
         }
     },
 
-    // Color palette - Professional muted tones
+    // Color palette - Refined professional tones
     colors: {
-        control: '#1a73e8',
-        experimental: '#5f6368',
-        ai: '#1e8e3e',
-        warning: '#e37400',
-        error: '#d93025',
-        info: '#1a73e8',
-        gradient1: 'rgba(26, 115, 232, 0.7)',
-        gradient2: 'rgba(95, 99, 104, 0.7)'
+        control: '#2563eb',
+        experimental: '#64748b',
+        ai: '#059669',
+        warning: '#d97706',
+        error: '#dc2626',
+        info: '#2563eb',
+        gradient1: 'rgba(37, 99, 235, 0.7)',
+        gradient2: 'rgba(100, 116, 139, 0.7)'
     },
 
     /**
@@ -112,10 +118,10 @@ const Charts = {
                     label: 'Accuracy (%)',
                     data: [controlAcc, expInitialAcc, expFinalAcc, aiAcc],
                     backgroundColor: [
-                        'rgba(26, 115, 232, 0.8)',
-                        'rgba(95, 99, 104, 0.4)',
-                        'rgba(95, 99, 104, 0.8)',
-                        'rgba(30, 142, 62, 0.8)'
+                        'rgba(37, 99, 235, 0.8)',
+                        'rgba(100, 116, 139, 0.35)',
+                        'rgba(100, 116, 139, 0.8)',
+                        'rgba(5, 150, 105, 0.8)'
                     ],
                     borderColor: [
                         this.colors.control,
@@ -124,7 +130,7 @@ const Charts = {
                         this.colors.ai
                     ],
                     borderWidth: 2,
-                    borderRadius: 8,
+                    borderRadius: 10,
                     barThickness: 60
                 }]
             },
@@ -173,21 +179,25 @@ const Charts = {
                         label: 'Control Group',
                         data: controlByBlock,
                         borderColor: this.colors.control,
-                        backgroundColor: 'rgba(26, 115, 232, 0.08)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.06)',
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
                     },
                     {
                         label: 'Experimental Group',
                         data: expByBlock,
                         borderColor: this.colors.experimental,
-                        backgroundColor: 'rgba(95, 99, 104, 0.08)',
+                        backgroundColor: 'rgba(100, 116, 139, 0.06)',
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
                     }
                 ]
             },
@@ -232,21 +242,25 @@ const Charts = {
                         label: 'AI Agreement Rate',
                         data: trustByBlock,
                         borderColor: this.colors.ai,
-                        backgroundColor: 'rgba(30, 142, 62, 0.08)',
+                        backgroundColor: 'rgba(5, 150, 105, 0.06)',
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
                     },
                     {
                         label: 'Decision Reversal Rate',
                         data: reversalByBlock,
                         borderColor: this.colors.warning,
-                        backgroundColor: 'rgba(227, 116, 0, 0.08)',
+                        backgroundColor: 'rgba(217, 119, 6, 0.06)',
                         fill: true,
-                        tension: 0.3,
-                        pointRadius: 6,
-                        pointHoverRadius: 8
+                        tension: 0.4,
+                        pointRadius: 5,
+                        pointHoverRadius: 7,
+                        pointBackgroundColor: '#fff',
+                        pointBorderWidth: 2
                     }
                 ]
             },
@@ -319,13 +333,13 @@ const Charts = {
                     label: 'Correlation with Accuracy (r)',
                     data: correlations,
                     backgroundColor: correlations.map(r =>
-                        r >= 0 ? 'rgba(30, 142, 62, 0.7)' : 'rgba(217, 48, 37, 0.7)'
+                        r >= 0 ? 'rgba(5, 150, 105, 0.7)' : 'rgba(220, 38, 38, 0.7)'
                     ),
                     borderColor: correlations.map(r =>
-                        r >= 0 ? '#1e8e3e' : '#d93025'
+                        r >= 0 ? '#059669' : '#dc2626'
                     ),
                     borderWidth: 2,
-                    borderRadius: 8
+                    borderRadius: 10
                 }]
             },
             options: {
@@ -389,10 +403,13 @@ const Charts = {
                     {
                         label: 'Participants',
                         data: scatterData,
-                        backgroundColor: 'rgba(26, 115, 232, 0.5)',
+                        backgroundColor: 'rgba(37, 99, 235, 0.4)',
                         borderColor: this.colors.control,
-                        pointRadius: 8,
-                        pointHoverRadius: 10
+                        pointRadius: 7,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: 'rgba(37, 99, 235, 0.5)',
+                        pointBorderColor: this.colors.control,
+                        pointBorderWidth: 2
                     },
                     {
                         label: `Regression (R² = ${regression.r2.toFixed(3)})`,
@@ -557,10 +574,13 @@ const Charts = {
                     {
                         label: 'Participants',
                         data: scatterData,
-                        backgroundColor: 'rgba(217, 48, 37, 0.5)',
+                        backgroundColor: 'rgba(220, 38, 38, 0.4)',
                         borderColor: this.colors.error,
-                        pointRadius: 8,
-                        pointHoverRadius: 10
+                        pointRadius: 7,
+                        pointHoverRadius: 9,
+                        pointBackgroundColor: 'rgba(220, 38, 38, 0.5)',
+                        pointBorderColor: this.colors.error,
+                        pointBorderWidth: 2
                     },
                     {
                         label: `Regression (r = ${correlation.r.toFixed(2)}, p = ${Statistics.formatPValue(correlation.pValue)})`,
@@ -615,10 +635,10 @@ const Charts = {
      * AI Reliance metric config
      */
     aiRelianceMetrics: {
-        aiAgreement: { label: 'AI Agreement Rate', color: '#1e8e3e', bgColor: 'rgba(30, 142, 62, 0.08)' },
-        initialAccuracy: { label: 'Initial Accuracy', color: '#1a73e8', bgColor: 'rgba(26, 115, 232, 0.08)' },
-        finalAccuracy: { label: 'Final Accuracy', color: '#5f6368', bgColor: 'rgba(95, 99, 104, 0.08)' },
-        revertRate: { label: 'Revert Rate', color: '#e37400', bgColor: 'rgba(227, 116, 0, 0.08)' }
+        aiAgreement: { label: 'AI Agreement Rate', color: '#059669', bgColor: 'rgba(5, 150, 105, 0.06)' },
+        initialAccuracy: { label: 'Initial Accuracy', color: '#2563eb', bgColor: 'rgba(37, 99, 235, 0.06)' },
+        finalAccuracy: { label: 'Final Accuracy', color: '#64748b', bgColor: 'rgba(100, 116, 139, 0.06)' },
+        revertRate: { label: 'Revert Rate', color: '#d97706', bgColor: 'rgba(217, 119, 6, 0.06)' }
     },
 
     /**
@@ -655,10 +675,12 @@ const Charts = {
                 data: relianceData[key],
                 borderColor: cfg.color,
                 backgroundColor: cfg.bgColor,
-                fill: metricsToShow.length === 1, // Only fill if single metric selected
-                tension: 0.3,
-                pointRadius: 6,
-                pointHoverRadius: 8,
+                fill: metricsToShow.length === 1,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#fff',
+                pointBorderWidth: 2,
                 borderWidth: metricsToShow.length > 1 ? 2.5 : 3
             });
         });
@@ -673,7 +695,7 @@ const Charts = {
                     legend: {
                         display: true,
                         labels: {
-                            color: '#5c5c5c',
+                            color: '#475569',
                             font: { family: 'Inter, sans-serif', size: 12, weight: 500 },
                             usePointStyle: true,
                             pointStyle: 'circle',

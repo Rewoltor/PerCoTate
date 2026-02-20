@@ -58,6 +58,12 @@ const App = {
             document.getElementById('content').classList.remove('hidden');
             document.getElementById('header-controls').classList.remove('hidden');
 
+            // Setup scroll-based UX enhancements
+            this.setupScrollEffects();
+
+            // Animate metric values
+            this.animateCounters();
+
             console.log('✅ Dashboard ready!');
         } catch (error) {
             console.error('❌ Failed to initialize:', error);
@@ -482,7 +488,6 @@ const App = {
 
         navItems.forEach(item => {
             item.addEventListener('click', (e) => {
-                // Update active state
                 navItems.forEach(i => i.classList.remove('active'));
                 item.classList.add('active');
             });
@@ -503,6 +508,84 @@ const App = {
         }, { threshold: 0.3 });
 
         sections.forEach(section => observer.observe(section));
+    },
+
+    /**
+     * Setup scroll-based UX enhancements:
+     * - Header gains shadow on scroll
+     * - Sections reveal on scroll into view
+     */
+    setupScrollEffects() {
+        const header = document.getElementById('main-header');
+        const mainContent = document.querySelector('.main-content');
+
+        if (header && mainContent) {
+            mainContent.addEventListener('scroll', () => {
+                header.classList.toggle('scrolled', mainContent.scrollTop > 10);
+            }, { passive: true });
+
+            // Also listen on window scroll in case content scrolls via window
+            window.addEventListener('scroll', () => {
+                header.classList.toggle('scrolled', window.scrollY > 10);
+            }, { passive: true });
+        }
+
+        // Scroll-reveal for sections
+        const sections = document.querySelectorAll('.section');
+        sections.forEach(s => s.classList.add('scroll-reveal'));
+
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target); // Only animate once
+                }
+            });
+        }, { threshold: 0.01, rootMargin: '0px 0px -40px 0px' });
+
+        sections.forEach(section => revealObserver.observe(section));
+    },
+
+    /**
+     * Animate metric values counting up from 0
+     */
+    animateCounters() {
+        const metricElements = document.querySelectorAll('.metric-value');
+        metricElements.forEach(el => {
+            const text = el.textContent;
+            if (!text || text === '--') return;
+
+            // Parse numeric value (supports percentages like "72.4%")
+            const match = text.match(/([+-]?)([\d.]+)(%?)/);
+            if (!match) return;
+
+            const sign = match[1];
+            const target = parseFloat(match[2]);
+            const suffix = match[3];
+            if (isNaN(target)) return;
+
+            const duration = 800; // ms
+            const startTime = performance.now();
+            const decimals = match[2].includes('.') ? match[2].split('.')[1].length : 0;
+
+            const animate = (currentTime) => {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                // Ease out quad
+                const eased = 1 - (1 - progress) * (1 - progress);
+                const current = target * eased;
+                el.textContent = sign + current.toFixed(decimals) + suffix;
+
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    el.textContent = text; // Ensure exact final value
+                }
+            };
+
+            el.textContent = sign + '0' + (decimals > 0 ? '.' + '0'.repeat(decimals) : '') + suffix;
+            requestAnimationFrame(animate);
+        });
     },
 
     /**
