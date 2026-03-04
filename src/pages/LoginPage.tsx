@@ -120,8 +120,8 @@ export const LoginPage: React.FC = () => {
                     <img src="/ppke_logo.png" alt="PPKE Logo" className="h-20 w-auto object-contain" />
                 </div>
 
-                {/* 👇 COMMENT OUT OR UNCOMMENT THE LINE BELOW TO HIDE/SHOW REGISTRATION 👇 */}
-                {/* {renderToggle()} */}
+                {/* 👇 CHANGE 'false' TO 'true' BELOW TO SHOW REGISTRATION 👇 */}
+                {true && renderToggle()}
 
                 <div className="px-1 text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">
