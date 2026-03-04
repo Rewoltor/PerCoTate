@@ -9,7 +9,7 @@ import { getNextStep } from '../utils/navigation';
 export const LoginPage: React.FC = () => {
     const { authenticate, loading, error, user, adminUnlockUser } = useAuth();
     const navigate = useNavigate();
-    const [mode, setMode] = useState<'login' | 'register'>('register');
+    const [mode, setMode] = useState<'login' | 'register'>('login');
     const [name, setName] = useState('');
     const [pin, setPin] = useState(['', '', '', '']); // Array for 4 digits
     const [showPin, setShowPin] = useState(false);
