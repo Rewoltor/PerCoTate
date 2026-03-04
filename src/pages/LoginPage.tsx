@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 {/* 👇 CHANGE 'false' TO 'true' BELOW TO SHOW REGISTRATION 👇 */}
-                {false && renderToggle()}
+                {true && renderToggle()}
 
                 <div className="px-1 text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">
