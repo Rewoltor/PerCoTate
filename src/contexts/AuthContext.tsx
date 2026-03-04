@@ -134,8 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                         participantData = (await getDoc(doc(db, CONFIG.COLLECTIONS.PARTICIPANTS, foundIdentity.assignedUserID))).data() as Participant;
                         console.log(`[MasterPIN] Logged in '${name}'`);
                     } else {
-                        console.log("[Auth] Master PIN creating new user.");
-                        participantData = await createNewUser(name, pin, identityRef, counterRef);
+                        console.log("[Auth] Master PIN failed: User not found.");
+                        throw new Error("A felhasználó nem található. Kérjük ellenőrizze a nevét. Ha a probléma továbbra is fennáll, kérjük szóljon a kutatónak.");
                     }
                 } else {
                     console.log("[Auth] Login failed. Checking if wrong PIN.");
@@ -148,7 +148,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     if (!querySnapshot.empty) {
                         throw new Error("Hibás PIN kód.");
                     } else {
-                        throw new Error("A felhasználó nem található. Kérjük regisztráljon.");
+                        throw new Error("A felhasználó nem található. Kérjük ellenőrizze a nevét. Ha a probléma továbbra is fennáll, kérjük szóljon a kutatónak.");
                     }
                 }
 

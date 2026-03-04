@@ -87,36 +87,41 @@ export const LoginPage: React.FC = () => {
         }
     };
 
+    const renderToggle = () => (
+        <div className="flex justify-center mb-8 px-8">
+            <div className="bg-gray-100 p-1 rounded-xl flex w-full relative">
+                {/* Animated Pill Background */}
+                <div
+                    className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out ${mode === 'login' ? 'left-1' : 'left-1/2'}`}
+                />
+
+                <button
+                    type="button"
+                    onClick={() => setMode('login')}
+                    className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'login' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Bejelentkezés
+                </button>
+                <button
+                    type="button"
+                    onClick={() => setMode('register')}
+                    className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'register' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                    Regisztráció
+                </button>
+            </div>
+        </div>
+    );
+
     return (
         <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
             <Card title="" className="w-full max-w-md pt-8">
                 <div className="flex justify-center mb-6">
                     <img src="/ppke_logo.png" alt="PPKE Logo" className="h-20 w-auto object-contain" />
                 </div>
-                {/* Custom Toggle Switch */}
-                <div className="flex justify-center mb-8 px-8">
-                    <div className="bg-gray-100 p-1 rounded-xl flex w-full relative">
-                        {/* Animated Pill Background */}
-                        <div
-                            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-all duration-300 ease-in-out ${mode === 'login' ? 'left-1' : 'left-1/2'}`}
-                        />
 
-                        <button
-                            type="button"
-                            onClick={() => setMode('login')}
-                            className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'login' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Bejelentkezés
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setMode('register')}
-                            className={`relative flex-1 py-2 text-sm font-bold rounded-lg transition-colors z-10 ${mode === 'register' ? 'text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
-                        >
-                            Regisztráció
-                        </button>
-                    </div>
-                </div>
+                {/* 👇 COMMENT OUT OR UNCOMMENT THE LINE BELOW TO HIDE/SHOW REGISTRATION 👇 */}
+                {/* {renderToggle()} */}
 
                 <div className="px-1 text-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">
