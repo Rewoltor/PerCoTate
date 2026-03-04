@@ -192,7 +192,7 @@ export const LoginPage: React.FC = () => {
                         {mode === 'login' ? 'Belépés' : 'Regisztráció'}
                     </Button>
 
-                    {error && error.includes("Phase 1 complete") && (
+                    {error && error.includes("1. fázis befejeződött") && (
                         <div className="mt-4 pt-4 border-t border-gray-100">
                             <Button
                                 type="button"

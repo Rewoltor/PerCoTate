@@ -184,7 +184,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (diffTime < CONFIG.WASHOUT_PERIOD_MS) {
                     const daysLeft = Math.ceil((CONFIG.WASHOUT_PERIOD_MS - diffTime) / (1000 * 60 * 60 * 24));
                     console.log("[Auth] Washout active. Locking out.");
-                    throw new Error(`Phase 1 complete. Please return in ${daysLeft} days for Phase 2.`);
+                    throw new Error(`Az 1. fázis befejeződött. Kérjük térjen vissza ${daysLeft} nap múlva a 2. fázishoz.`);
                 } else {
                     console.log("[Auth] Washout passed. Upgrading to Phase 2.");
 
