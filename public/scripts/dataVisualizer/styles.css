@@ -564,6 +564,87 @@ body {
     font-weight: 600;
 }
 
+/* --- Treatment Group Segmented Toggle --- */
+.treatment-toggle {
+    display: flex;
+    position: relative;
+    background: var(--bg-subtle);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius);
+    padding: 3px;
+}
+
+.treatment-toggle.compact {
+    padding: 2px;
+}
+
+.treatment-seg {
+    position: relative;
+    z-index: 2;
+    padding: 6px 16px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    white-space: nowrap;
+    outline: none;
+}
+
+.treatment-toggle.compact .treatment-seg {
+    padding: 4px 14px;
+    font-size: 12px;
+}
+
+.treatment-seg:hover {
+    color: var(--text-primary);
+}
+
+.treatment-seg.active {
+    color: #ffffff;
+}
+
+/* Sliding indicator behind active treatment segment */
+.treatment-seg-indicator {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: calc(50% - 3px);
+    height: calc(100% - 6px);
+    background: var(--accent-primary);
+    border-radius: var(--radius-sm);
+    transition: transform var(--transition-base), width var(--transition-base);
+    z-index: 1;
+    pointer-events: none;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.3);
+}
+
+.treatment-toggle.compact .treatment-seg-indicator {
+    top: 2px;
+    left: 2px;
+    height: calc(100% - 4px);
+}
+
+/* When no segment is active (Show All mode), hide indicator */
+.treatment-toggle:not(.has-selection) .treatment-seg-indicator {
+    opacity: 0;
+    transform: scaleX(0);
+}
+
+.treatment-toggle.has-selection .treatment-seg-indicator {
+    opacity: 1;
+    transform: scaleX(1);
+}
+
+/* Move indicator to second segment */
+.treatment-toggle.seg-2 .treatment-seg-indicator {
+    transform: translateX(100%);
+}
+
 /* --- Cohort Dropdown --- */
 .cohort-dropdown {
     padding: 7px 32px 7px 12px;

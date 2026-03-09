@@ -9,8 +9,9 @@ const App = {
 
     // Filter state
     filters: {
-        phase: 'all',        // 'all', 1, 2, etc.
-        cohort: 'all'        // 'all' or a date string, e.g. '2026-02-05'
+        phase: 'all',           // 'all', 1 (February), or 2 (March)
+        treatmentGroup: 'all',  // 'all', 0 (Control), or 1 (AI)
+        cohort: 'all'           // 'all', 1, or 2
     },
 
     // Image Analysis State
@@ -81,59 +82,33 @@ const App = {
      * Initialize filter controls from data
      */
     initFilters() {
-        // Extract unique cohort dates from all trials
-        const cohortDates = new Set();
-        this.data.trials.forEach(t => {
-            if (t.cohortDate) cohortDates.add(t.cohortDate);
-        });
+        // === Phase Toggle ===
+        const phaseToggle = document.getElementById('phase-toggle');
+        const phaseSegs = phaseToggle.querySelectorAll('.phase-seg');
+        const phaseShowAllBtn = document.getElementById('phase-show-all-btn');
 
-        // Sort dates chronologically
-        const sortedDates = [...cohortDates].sort();
-
-        // Populate cohort dropdown
-        const dropdown = document.getElementById('cohort-dropdown');
-        sortedDates.forEach(date => {
-            const option = document.createElement('option');
-            option.value = date;
-            // Format as readable date e.g. "Feb 5, 2026"
-            const d = new Date(date + 'T00:00:00');
-            const month = d.toLocaleString('en-US', { month: 'short' });
-            const day = d.getDate();
-            const year = d.getFullYear();
-            option.textContent = `${month} ${day}, ${year}`;
-            dropdown.appendChild(option);
-        });
-
-        // References
-        const toggle = document.getElementById('phase-toggle');
-        const segs = toggle.querySelectorAll('.phase-seg');
-        const showAllBtn = document.getElementById('show-all-btn');
-
-        // Helper: update phase toggle visual state
-        const updatePhaseUI = (phase) => {
-            segs.forEach(s => s.classList.remove('active'));
-            if (phase === 'all') {
-                toggle.classList.remove('has-selection', 'seg-2');
-                showAllBtn.classList.add('active');
+        const updatePhaseUI = (value) => {
+            phaseSegs.forEach(s => s.classList.remove('active'));
+            if (value === 'all') {
+                phaseToggle.classList.remove('has-selection', 'seg-2');
+                phaseShowAllBtn.classList.add('active');
             } else {
-                showAllBtn.classList.remove('active');
-                toggle.classList.add('has-selection');
-                if (phase === 2) {
-                    toggle.classList.add('seg-2');
+                phaseShowAllBtn.classList.remove('active');
+                phaseToggle.classList.add('has-selection');
+                if (value === 2) {
+                    phaseToggle.classList.add('seg-2');
                 } else {
-                    toggle.classList.remove('seg-2');
+                    phaseToggle.classList.remove('seg-2');
                 }
-                // Mark the active segment
-                segs.forEach(s => {
-                    if (parseInt(s.dataset.phase, 10) === phase) {
+                phaseSegs.forEach(s => {
+                    if (parseInt(s.dataset.phase, 10) === value) {
                         s.classList.add('active');
                     }
                 });
             }
         };
 
-        // Phase segment click
-        segs.forEach(seg => {
+        phaseSegs.forEach(seg => {
             seg.addEventListener('click', () => {
                 const phase = parseInt(seg.dataset.phase, 10);
                 this.filters.phase = phase;
@@ -142,16 +117,57 @@ const App = {
             });
         });
 
-        // Show All click
-        showAllBtn.addEventListener('click', () => {
+        phaseShowAllBtn.addEventListener('click', () => {
             this.filters.phase = 'all';
             updatePhaseUI('all');
             this.applyFilters();
         });
 
-        // Cohort dropdown change
+        // === Treatment Group Toggle ===
+        const tgToggle = document.getElementById('treatment-toggle');
+        const tgSegs = tgToggle.querySelectorAll('.treatment-seg');
+        const tgShowAllBtn = document.getElementById('treatment-show-all-btn');
+
+        const updateTreatmentUI = (value) => {
+            tgSegs.forEach(s => s.classList.remove('active'));
+            if (value === 'all') {
+                tgToggle.classList.remove('has-selection', 'seg-2');
+                tgShowAllBtn.classList.add('active');
+            } else {
+                tgShowAllBtn.classList.remove('active');
+                tgToggle.classList.add('has-selection');
+                if (value === 1) {
+                    tgToggle.classList.add('seg-2');
+                } else {
+                    tgToggle.classList.remove('seg-2');
+                }
+                tgSegs.forEach(s => {
+                    if (parseInt(s.dataset.treatment, 10) === value) {
+                        s.classList.add('active');
+                    }
+                });
+            }
+        };
+
+        tgSegs.forEach(seg => {
+            seg.addEventListener('click', () => {
+                const tg = parseInt(seg.dataset.treatment, 10);
+                this.filters.treatmentGroup = tg;
+                updateTreatmentUI(tg);
+                this.applyFilters();
+            });
+        });
+
+        tgShowAllBtn.addEventListener('click', () => {
+            this.filters.treatmentGroup = 'all';
+            updateTreatmentUI('all');
+            this.applyFilters();
+        });
+
+        // === Cohort Dropdown ===
+        const dropdown = document.getElementById('cohort-dropdown');
         dropdown.addEventListener('change', () => {
-            this.filters.cohort = dropdown.value;
+            this.filters.cohort = dropdown.value === 'all' ? 'all' : parseInt(dropdown.value, 10);
             this.applyFilters();
         });
     },
@@ -172,14 +188,19 @@ const App = {
     getFilteredData() {
         let trials = this.data.trials;
 
-        // Filter by phase
+        // Filter by phase (1 = February, 2 = March)
         if (this.filters.phase !== 'all') {
             trials = trials.filter(t => t.phase === this.filters.phase);
         }
 
-        // Filter by cohort date
+        // Filter by treatment group (0 = Control, 1 = AI)
+        if (this.filters.treatmentGroup !== 'all') {
+            trials = trials.filter(t => t.treatment_group.toString() === this.filters.treatmentGroup.toString());
+        }
+
+        // Filter by cohort number (1 or 2)
         if (this.filters.cohort !== 'all') {
-            trials = trials.filter(t => t.cohortDate === this.filters.cohort);
+            trials = trials.filter(t => t.cohort === this.filters.cohort);
         }
 
         // Re-group into participants

@@ -5,7 +5,7 @@
 
 const DataLoader = {
     // Configuration - absolute path from server root (scripts directory)
-    DATA_PATH: '../outputs/csv/export_2026.02.06_11:11_1/participants.csv',
+    DATA_PATH: '../outputs/csv/export_2026.03.06_10:36_1/participants.csv',
 
 
     /**
@@ -74,16 +74,24 @@ const DataLoader = {
             trial.trial_number = trialIdMatch ? parseInt(trialIdMatch[1], 10) : 1;
             trial.trialBlock = Math.ceil(trial.trial_number / 10);
 
-            // Extract phase number from current_phase (e.g., 'phase1_completed' -> 1)
-            const phaseMatch = trial.current_phase ? trial.current_phase.match(/phase(\d+)/) : null;
-            trial.phase = phaseMatch ? parseInt(phaseMatch[1], 10) : null;
+            // Extract phase from trial_end_time month (February = Phase 1, March = Phase 2)
+            if (trial.trial_end_time) {
+                const endDate = new Date(trial.trial_end_time);
+                const month = endDate.getMonth(); // 0-based: 1=Feb, 2=Mar
+                trial.phase = month === 1 ? 1 : 2; // Feb=1, Mar=2
+            } else {
+                trial.phase = null;
+            }
 
             // Compute cohort date from trial_start_time (epoch ms -> 'YYYY-MM-DD')
             if (trial.trial_start_time) {
                 const d = new Date(trial.trial_start_time);
                 trial.cohortDate = d.toISOString().split('T')[0];
+                // Cohort number: day 5 = Cohort 1, day 6 = Cohort 2
+                trial.cohort = d.getDate() === 5 ? 1 : 2;
             } else {
                 trial.cohortDate = null;
+                trial.cohort = null;
             }
         });
 
