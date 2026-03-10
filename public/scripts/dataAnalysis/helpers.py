@@ -73,6 +73,7 @@ def load_and_clean(csv_path: str | None = None) -> pd.DataFrame:
 
     df = pd.read_csv(csv_path)
 
+
     # ── Numeric columns ──
     numeric_cols = [
         "age", "ai_confidence", "ai_prediction", "confidence",
@@ -278,6 +279,17 @@ def derive_variables(df: pd.DataFrame) -> pd.DataFrame:
         (df.loc[ai_mask, "skepticism"] == 1)
         & (df.loc[ai_mask, "ai_correct"] == 0)
     ).any(), "Sanity check failed: skepticism when AI is incorrect"
+
+    # Exclude images with known label noise after variables are derived
+    # noisy_images = [
+    #     "9023935L.png",
+    #     "9998089R.png",
+    #     "9788301L.png",
+    #     "9360243L.png",
+    #     "9299531R.png"
+    # ]
+    # if "trial_original_image_name" in df.columns:
+    #     df = df[~df["trial_original_image_name"].isin(noisy_images)]
 
     return df
 

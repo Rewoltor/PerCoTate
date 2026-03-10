@@ -22,7 +22,6 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
     const [currentImageUrl, setCurrentImageUrl] = useState<string>('');
 
     // Annotation State
-    const [isReadable, setIsReadable] = useState<boolean | null>(null);
     const [radiologistKLGrade, setRadiologistKLGrade] = useState<number | null>(null);
     const [confidence, setConfidence] = useState<number | null>(null);
 
@@ -67,7 +66,7 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
 
     const TOTAL_TRIALS = RADIO_CONFIG.TOTAL_IMAGES;
 
-    const canSubmit = isReadable === false || (isReadable === true && radiologistKLGrade !== null && confidence !== null);
+    const canSubmit = radiologistKLGrade !== null && confidence !== null;
 
     // Check completion on mount
     useEffect(() => {
@@ -94,7 +93,6 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
         setCurrentImageUrl(imageUrl);
 
         // Reset form state
-        setIsReadable(null);
         setRadiologistKLGrade(null);
         setConfidence(null);
         setStartTime(Date.now());
@@ -128,9 +126,9 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
             startTime,
             endTime,
             duration: (endTime - startTime) / 1000,
-            isReadable: isReadable!,
-            radiologistKLGrade: isReadable ? (radiologistKLGrade as 0 | 1 | 2 | 3 | 4) : (null as any),
-            confidence: isReadable ? confidence! : (null as any),
+            isReadable: true,
+            radiologistKLGrade: radiologistKLGrade as 0 | 1 | 2 | 3 | 4,
+            confidence: confidence!,
             groundTruthRaw: groundTruthMap[`${imageId}.png`] ?? null
         };
 
@@ -245,67 +243,37 @@ export const RadiologistAnnotation: React.FC<RadiologistAnnotationProps> = ({ on
                     </div>
 
                     <div className="space-y-6">
-                        {/* Step 1: Readability */}
-                        <div>
+                        {/* Step 1: KL Grade */}
+                        <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                             <h3 className="font-semibold mb-3 text-gray-700 text-lg flex items-center">
-                                1. Képminőség
-                                <HelpTooltip text="Kérjük, ítélje meg, hogy a felvétel minősége (expozíció, beállítás, műtermékek hiánya) lehetővé teszi-e a megbízható diagnosztizálást." align="center" position="bottom" />
+                                1. KL Fokozat
+                                <HelpTooltip text="Osztályozza a térdízületi arthrosis súlyosságát a Kellgren-Lawrence skála szerint (0: negatív, 4: súlyos)." align="left" position="bottom" />
                             </h3>
-                            <div className="flex gap-4">
-                                <button
-                                    onClick={() => setIsReadable(true)}
-                                    className={`flex-1 py-4 px-4 rounded-xl border-2 transition-all duration-200 text-lg font-bold shadow-sm hover:shadow-md
-                                        ${isReadable === true
-                                            ? 'bg-teal-600 border-teal-600 text-white transform scale-[1.02]'
-                                            : 'bg-white border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-teal-50'}`}
-                                >
-                                    Megfelelő
-                                </button>
-                                <button
-                                    onClick={() => setIsReadable(false)}
-                                    className={`flex-1 py-4 px-4 rounded-xl border-2 transition-all duration-200 text-lg font-bold shadow-sm hover:shadow-md
-                                        ${isReadable === false
-                                            ? 'bg-teal-600 border-teal-600 text-white transform scale-[1.02]'
-                                            : 'bg-white border-gray-200 text-gray-700 hover:border-teal-300 hover:bg-teal-50'}`}
-                                >
-                                    Nem megfelelő
-                                </button>
+                            <div className="grid grid-cols-5 gap-2">
+                                {[0, 1, 2, 3, 4].map(grade => (
+                                    <button
+                                        key={grade}
+                                        onClick={() => setRadiologistKLGrade(grade)}
+                                        className={`aspect-square rounded-xl border-2 font-bold text-xl transition-all transform hover:scale-105
+                                            ${radiologistKLGrade === grade
+                                                ? 'bg-gray-900 border-gray-900 text-white shadow-lg'
+                                                : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
+                                    >
+                                        {grade}
+                                    </button>
+                                ))}
+                            </div>
+                            <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium uppercase tracking-wide px-1">
+                                <span>Normál</span>
+                                <span>Súlyos</span>
                             </div>
                         </div>
 
-                        {/* Step 2: KL Grade */}
-                        {isReadable === true && (
-                            <div className="animate-in fade-in slide-in-from-right-4 duration-500">
-                                <h3 className="font-semibold mb-3 text-gray-700 text-lg flex items-center">
-                                    2. KL Fokozat
-                                    <HelpTooltip text="Osztályozza a térdízületi arthrosis súlyosságát a Kellgren-Lawrence skála szerint (0: negatív, 4: súlyos)." align="left" position="bottom" />
-                                </h3>
-                                <div className="grid grid-cols-5 gap-2">
-                                    {[0, 1, 2, 3, 4].map(grade => (
-                                        <button
-                                            key={grade}
-                                            onClick={() => setRadiologistKLGrade(grade)}
-                                            className={`aspect-square rounded-xl border-2 font-bold text-xl transition-all transform hover:scale-105
-                                                ${radiologistKLGrade === grade
-                                                    ? 'bg-gray-900 border-gray-900 text-white shadow-lg'
-                                                    : 'bg-white border-gray-200 text-gray-700 hover:border-gray-400 hover:bg-gray-50'}`}
-                                        >
-                                            {grade}
-                                        </button>
-                                    ))}
-                                </div>
-                                <div className="flex justify-between text-xs text-gray-400 mt-2 font-medium uppercase tracking-wide px-1">
-                                    <span>Normál</span>
-                                    <span>Súlyos</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Step 3: Confidence */}
-                        {isReadable === true && radiologistKLGrade !== null && (
+                        {/* Step 2: Confidence */}
+                        {radiologistKLGrade !== null && (
                             <div className="animate-in fade-in slide-in-from-right-4 duration-500">
                                 <h3 className="font-semibold mb-3 text-lg text-gray-700 flex items-center">
-                                    3. Mennyire biztos a döntésében?
+                                    2. Mennyire biztos a döntésében?
                                     <HelpTooltip text="Adja meg, mennyire biztos a választott KL fokozat helyességében. 1: nagyon bizonytalan, 7: teljesen biztos." align="right" position="bottom" />
                                 </h3>
                                 <div className="grid grid-cols-7 gap-1">
