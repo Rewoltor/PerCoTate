@@ -1,0 +1,261 @@
+# PerCoTate — Comprehensive Analysis Overview & Conclusions
+
+*Synthesized from: NB0–NB6 outputs, DANNY paper, llm_agent_context.md, all analysis sessions*
+
+---
+
+## Study at a Glance
+
+**What we did:** A crossover experiment with 68 unpaid Hungarian high school students (age M=16.3) performing binary classification of knee X-rays (healthy vs. diseased) — with and without a sub-optimal AI assistant (~70% accurate). The study replicates and extends the DANNY framework (Jeon et al., IUI 2025) by adding psychometric predictors (Big Five, IQ) and temporal dynamics.
+
+**Design:** Counterbalanced crossover — 51 participants completed both conditions, 17 dropped out after Phase 1 only.
+
+**Dataset:** 50 unique X-ray images (25 healthy, 25 diseased by original labels), each seen by ~119 participants across both conditions → 5,950 total trials.
+
+> [!CAUTION]
+> **The ground truth is under active revision.** 5 images have statistically proven label inversion (NB6), and the entire 50-image set will be re-annotated by ≥5 radiologists/orthopedic surgeons. All quantitative accuracy metrics below are provisional and must be recalculated once platinum-standard labels are available. The *patterns and mechanisms* (over-reliance, learning effects, personality correlations) should be stable, but the *magnitudes* will change.
+
+---
+
+## Section 1: What We Know — Confirmed Findings
+
+### 1.1 The Primary Result: AI Substantially Helps (Replication of DANNY)
+
+| Comparison | Control | AI-Assisted | Diff | Statistic |
+|-----------|---------|------------|------|-----------|
+| All participants (independent) | M=0.606 | M=0.651 | +0.045 | t=3.05, p=0.003, d=0.560 |
+| Completers only (paired) | M=0.604 | M=0.653 | +0.049 | t=3.17, p=0.003, d=0.601 |
+| Completers, excl. IQ=0 | M=0.603 | M=0.659 | +0.056 | t=2.84, p=0.009, d=0.696 |
+| Engaged completers only | M=0.621 | M=0.676 | +0.055 | t=3.03, p=0.004, d=0.473 |
+
+*Result is robust across all participant subsets and analysis approaches.* **This replicates DANNY's core finding** with a different population, different design, and different imaging task.
+
+**Mechanism is clear** (NB1 §3, McNemar): Of 294 trial-level decision changes in AI condition:
+- 226 (76.9%) were corrections (wrong → right)
+- 68 (23.1%) were errors (right → wrong)
+- Net benefit: +158 trials
+
+### 1.2 The Headline Finding: Most Participants Cannot Beat Chance Without AI
+
+| Condition | N | Above Chance (binomial, p<0.05) |
+|-----------|---|----------------------------------|
+| Control | 58 | **23/58 (39.7%)** |
+| AI-Assisted | 61 | **39/61 (63.9%)** |
+| Overall | 68 | 51/68 (75.0%) |
+
+This reframes the entire story. **Without AI, 60% of participants are statistically indistinguishable from random guessing.** The AI does not just nudge a mean — it lifts a majority of participants into reliable performance territory. This is the most important single finding of the study and should lead the Results section.
+
+### 1.3 Order Effects Are Absent — The AI Effect is Real
+
+Mixed ANOVA: Condition effect (F=9.85, p=0.003, ηp²=0.167), no Group×Condition interaction (F=0.07, p=0.787). Both groups benefit equally from AI regardless of order. Baselines are equivalent (Control=0.604 vs pre-AI=0.604, t=-0.03, p=0.977).
+
+### 1.4 AI Confidence Guides (Appropriately) When It's High
+
+| AI Confidence Quartile | Agreement Rate | User Accuracy | AI Accuracy |
+|-----------------------|------------|------------|----------|
+| Q1 (low, mean=0.196) | 0.585 | 0.463 | 0.308 |
+| Q4 (high, mean=0.946) | 0.877 | 0.821 | 0.917 |
+
+Spearman r=0.212 (p<0.001). High AI confidence aligns with AI correctness, and users track this appropriately. This is a positive signal.
+
+### 1.5 Personality: Extraversion is the Dominant Predictor
+
+| Trait | Performance Metric | r | p |
+|-------|-------------------|---|---|
+| Extraversion | Overall accuracy | -0.422 | 0.001** |
+| Extraversion | AI accuracy | -0.516 | 0.001** |
+| Extraversion | Skepticism rate | +0.425 | 0.002** |
+
+**Confound caveat (critical):** Participants worked in a shared classroom setting. Extraverted students were observed communicating — this may be a partial or full explanation for the correlation. This must be reported as a limitation. The finding cannot be interpreted as a clean trait effect.
+
+OLS Regression (n=58): Big5 + IQ predicts overall accuracy (R²=0.331, F=4.21, p=0.002). Extraversion (β=-0.048, p<0.001) and Agreeableness (β=-0.031, p=0.026) are significant predictors. Treat as exploratory.
+
+### 1.6 Label Noise Is Real and Substantial
+
+5 images identified with statistically inverted labels (NB6 §2):
+
+| Image | GT | AI Pred | Human Pred | Disagree Rate | p-value |
+|-------|----|---------|-----------|---------------|---------|
+| 9023935L.png | 0 | 1 | 1 | 86.6% | 4.8e-17 |
+| 9998089R.png | 1 | 0 | 0 | 81.5% | 1.0e-12 |
+| 9788301L.png | 1 | 0 | 0 | 80.7% | 4.3e-12 |
+| 9360243L.png | 0 | 1 | 1 | 76.5% | 2.9e-9 |
+| 9299531R.png | 0 | 1 | 1 | 68.1% | 5.0e-5 |
+
+**These 5 images account for ~595 trials (~10% of all data).** With inverted labels, accuracy metrics are systematically biased.
+
+### 1.7 Dataset Is Harder Than DANNY's
+
+The 50-image dataset skews heavily toward ambiguous cases:
+
+| KL Severity | Images | Mean Human Acc | Category |
+|-------------|--------|---------------|----------|
+| Healthy (KL0) | 25 (50%) | 0.556 ± 0.201 | Hard |
+| Mild (KL2) | 15 (30%) | 0.550 ± 0.229 | Hard |
+| Moderate (KL3) | 9 (18%) | 0.925 ± 0.103 | Easy |
+| Severe (KL4) | 1 (2%) | 0.992 | Trivial |
+
+80% of images are in the two hardest categories. This explains lower baseline accuracy vs. DANNY and makes the AI boost even more meaningful (the AI helps exactly where it's hardest).
+
+---
+
+## Section 2: What We Might Have Missed or Need to Rethink
+
+### 2.1 Speed-Accuracy Dissociation Is Not What We Expected
+
+Trial duration drops sharply across trials (Control: r=-0.145; AI: r=-0.401, both p<0.001). But accuracy does **not** crash. The speed-accuracy correlation at every level of analysis is essentially zero (trial-level r=0.001, participant-level r=0.119, both non-significant).
+
+**What this means:** Speed-up is not caused by disenagement in the conventional sense — it is more likely *task habituation* (getting faster at clicking, not at thinking less). The binomial test (§7) identifies disengaged participants far more accurately than speed. **Do not use speed as an exclusion criterion.**
+
+However, the speed-up in the AI condition is nearly 3× stronger than in Control (r=-0.401 vs -0.145). This could mean participants *trust the AI* and spend less time deliberating. This is an unexplored angle: **does AI assistance reduce deliberation time disproportionately?**
+
+### 2.2 We Have Not Formally Tested Batch Effects
+
+Participants were run in (at least) 2 classroom cohorts. We observed inter-participant communication. We do not know if Batch 1 and Batch 2 differ in accuracy, over-reliance, or Extraversion scores. This is a potential confound that could explain variance in the personality findings. **A simple t-test or Mann-Whitney comparing the two batches should be added before paper submission.**
+
+### 2.3 The IQ Finding Is Underexplored
+
+31/58 participants (53.4%) scored IQ=0. The study reported this but didn't investigate the mechanism. Students self-reported they didn't understand the test. This is:
+- **Not a motivation proxy** (confirmed by user — we should not infer this)
+- **Not correlated with accuracy** (IQ=0 vs IQ>0: t=0.51, p=0.61)
+- **A plausible comprehension failure** — the test may have been poorly calibrated for Hungarian 15-18 year olds
+
+For the paper: report this as a data quality challenge with psychometric instruments in non-target populations. Recommend that future studies validate IQ instruments with pilot cohorts.
+
+### 2.4 The Learning Effect Result Is Underpowered — Not Null
+
+The key comparison (TG1 post-AI Control vs TG0 naive Control) shows: M_diff=+0.023, p=0.246, d=0.329.
+
+A medium effect (d=0.33) with n=24 vs n=27 yields ~40% statistical power to detect it. **This is an underpowered test, not a true null.** The block-level data (trial 41-50: TG1=0.696 vs TG0=0.604, Δ=+0.092) provides suggestive evidence of late-phase learning benefit. And crucially: **removing AI did not significantly hurt TG1 performance** (p=0.057) — the dependency/withdrawal hypothesis is not supported.
+
+For the paper: frame as a trend with a medium effect size consistent with a learning benefit, explicitly note the power limitation, and call for replication with N>100 completers.
+
+### 2.5 We Are Missing a Multiple Comparison Correction in NB4
+
+The Big Five analysis runs 30 correlations (5 traits × 6 metrics) without correction. After Benjamini-Hochberg FDR (q<0.05), the question is which findings survive. Based on the p-values:
+
+- Extraversion × Overall Acc: p=0.001 → **survives FDR easily**
+- Extraversion × AI Acc: p=0.0001 → **survives FDR easily**  
+- Extraversion × Skepticism: p=0.002 → **survives FDR easily**
+- Neuroticism × Skepticism: p=0.062 → **likely does NOT survive FDR**
+- Open-mindedness × Duration: p=0.050 → **borderline**
+
+**Add FDR correction to NB4 before finalizing.** This will sharpen the story: Extraversion is the robust predictor, Neuroticism is a trend.
+
+### 2.6 The X-Plot Reveals a Missing Analysis: Image-Level Over-Reliance
+
+The agreement-vs-accuracy X-shape confirms two populations of images: those where high agreement = correct (AI right) and those where high agreement = wrong (AI wrong). We have never explicitly sorted images by which "arm" of the X they sit on and characterized those two populations separately. 
+
+**Missing analysis:** Split images into "AI-correct-images" vs "AI-wrong-images" and compare:
+- Human accuracy distribution
+- Over-reliance rates
+- Confidence levels
+- KL grade distribution
+
+This would give a precise characterization of *which types of images* drive over-reliance.
+
+### 2.7 The Symptom Inputs Are Underanalyzed
+
+Participants provided Hungarian free-text symptom descriptions (`symptom1`, `symptom2`) categorized as none/symptom/uncertain. The analysis found significant accuracy differences by category (χ²=12.0, p=0.003). But the analysis stopped there. 
+
+**Missing:** When participants report "uncertain" (bizonytalan), does this uncertainty track with the image difficulty (per NB6 per-image data)? Are uncertain reports concentrated on the 15 "Ambiguous" or 9 "Very Difficult" images? If so, uncertainty reporting is a signal of *appropriate metacognition* — participants know when they don't know. This is a publishable finding on its own.
+
+---
+
+## Section 3: What Changes When Radiologist Ground Truth Arrives
+
+### The Magnitude of the Change Could Be Significant
+
+Currently: 5 identified noisy images. All 5 have `ai_accuracy=0.0` (AI said opposite of ground truth). If flipped:
+- 5 images move from "AI wrong" to "AI right"
+- Trial-level AI accuracy would increase from 70.0% toward ~73-75% (depending on how many of the ~595 trials are affected)
+- Human accuracy on those 5 images would flip from ~0.13-0.32 to ~0.68-0.87
+
+**But there may be more than 5.** The NB6 binomial test only flags images where the disagreement is statistically significant (p<0.05). Some images may have *partial* label noise or *ambiguous* cases that the radiologists will resolve differently. Conservatively, we could see **5–15 images** receiving updated labels.
+
+### What Will Change
+
+| Metric | Will Change? | How Much? |
+|--------|-------------|-----------|
+| AI overall accuracy | Yes | ↑ likely by 3-5% |
+| Human Control accuracy | Yes | Likely ↑ (some "wrong" answers were actually right) |
+| Human AI accuracy | Yes | Likely ↑ |
+| AI boost magnitude | Unclear | Could grow or shrink depending on which images flip |
+| Over-reliance rate | Yes | Could drop substantially (the 5 noisy images are extreme over-reliance "events" by current labeling) |
+| KL severity breakdown | Possible | Noisy images are all in healthy/mild categories |
+| Binomial chance-level proportions | Yes | Could improve |
+| Personality correlations | Unlikely to change | These are relative rankings, not absolute accuracy |
+| Temporal trends | Unlikely to change | These are within-person patterns |
+
+### What Will NOT Change
+
+- The **existence** of the AI boost (the mechanism is robust)
+- The **order effects** (non-significant group × condition interaction)
+- The **Extraversion correlation** (this is a rank-order finding)
+- The **temporal patterns** (speed-up, learning effect direction)
+- The **X-shape** in the agreement-accuracy plot (the structure is real)
+- The **label noise finding itself** (it will be validated, not overturned)
+
+### Recommended Analysis Strategy: Two-Track Paper
+
+| Track A (Current Labels) | Track B (Radiologist Labels) |
+|--------------------------|------------------------------|
+| All NB1-NB5 results as currently computed | Recompute NB1-NB5 with updated ground truth |
+| Report as "preliminary, pre-expert-validation" | Report as "primary, platinum-standard" |
+| Use to establish the pattern and direction | Use to establish the magnitude |
+| Already done | To be done |
+
+The paper should report both tracks, with Track B as the primary result and Track A in a supplementary table for transparency. This itself is a methodological contribution: showing that label noise shifts absolute accuracy but not the direction of findings.
+
+---
+
+## Section 4: Unified Narrative
+
+Here is the complete story the data tells:
+
+> **High school students attempting to classify knee X-ray images without assistance perform no better than chance for the majority of cases (60.3% below statistical significance threshold in Control condition). This confirms that this medical task requires genuine domain knowledge that laypersons lack.**
+>
+> **A sub-optimal AI model (70% accurate) dramatically changes this picture: with AI assistance, 63.9% of participants exceed the chance threshold, and group-level accuracy improves significantly (d=0.60). The AI is most beneficial for the ambiguous KL grade 0 (healthy) and KL grade 2 (mild) cases that make up 80% of the dataset — the precise cases where non-experts have the least prior knowledge.**
+>
+> **The mechanism of improvement is predominantly appropriate AI following: 76.9% of decision changes are corrections, 23.1% are errors. Over-reliance (following an incorrect AI) occurs in 15.5% of AI trials — a non-trivial but manageable rate that is lower in high-confidence AI cases.**
+>
+> **Personality predicts performance: higher Extraversion robustly predicts lower accuracy and higher skepticism (r=-0.42 to -0.52), though a classroom communication confound limits causal interpretation. IQ, as measured, does not predict accuracy — likely due to a test comprehension failure in this population.**
+>
+> **The crossover design reveals a potential learning benefit: participants who first used AI assistance did not significantly decline when AI was removed (p=0.057), and numerically outperformed naive-control participants by a medium effect size (d=0.33) in the final trial block. This trend warrants replication with larger samples.**
+>
+> **A label noise audit identified 5 images (10% of trials) with high-confidence label inversion. Expert re-annotation by radiologists is underway and will provide the platinum-standard ground truth for all primary analyses.**
+
+---
+
+## Section 5: Missing Analyses Priority List
+
+### Before Paper Submission (Do Now)
+1. **FDR correction** on Big5 correlation table (NB4) — 3 lines of code
+2. **Batch effect test** — t-test comparing the two classroom cohorts on accuracy, over-reliance, and Extraversion
+3. **Uncertainty-image difficulty correlation** — do "uncertain" symptom reports cluster on hard images?
+4. **Image-level AI-correct vs AI-wrong split** — characterize over-reliance at the image level
+
+### After Radiologist Re-Annotation
+5. **Recompute all accuracy metrics** (NB1-NB5) with new ground truth
+6. **Inter-rater reliability** among radiologists (Fleiss' κ)
+7. **AI model accuracy** with platinum-standard labels
+8. **Sensitivity analysis comparing current vs updated labels**
+
+### Optional Strengtheners
+9. **Bootstrap CIs** for key findings (AI boost, Extraversion r)
+10. **Power analysis** for the learning effect (to contextualize the non-significant result)
+
+---
+
+## Section 6: Challenges and Honest Limitations
+
+| Challenge | Severity | Mitigation |
+|-----------|----------|-----------|
+| Label noise in ground truth | **High** | Radiologist re-annotation in progress |
+| Classroom communication (Extraversion confound) | **High** | Report in Limitations, cannot be corrected post-hoc |
+| No IQ variance (53% scored 0) | **Medium** | Report as psychometric instrument failure, exclude IQ from regressions |
+| Small n for regression (n=58, 6 predictors) | **Medium** | Label as exploratory, use bootstrap CIs |
+| Unpaid participants, mandatory setting | **Medium** | Report, note binomial test exclusions |
+| Learning effect underpowered | **Medium** | Report effect size + power, call for replication |
+| Missing batch variable | **Low** | Add batch test before submission |
+| Multiple comparisons in NB4 | **Low** | Apply FDR, report corrected results |

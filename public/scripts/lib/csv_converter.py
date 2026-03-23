@@ -140,6 +140,70 @@ def flatten_participant_with_trials(participant_id: str, participant_data: Dict[
     return rows
 
 
+def flatten_radio_participant_with_trials(doc_id: str, doc_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """
+    Flatten a radio_participants document with its trials subcollection into
+    multiple rows — one row per trial (same pattern as flatten_participant_with_trials).
+
+    Participant-level fields are repeated on every trial row so the CSV is
+    self-contained and analysis-ready.
+
+    Args:
+        doc_id: Firestore document ID (e.g. "RAD-JL7MA")
+        doc_data: Document data dict (may contain _subcollections.trials)
+
+    Returns:
+        List of flat row dicts, one per trial (or one participant row if no trials yet)
+    """
+    rows = []
+
+    # --- Participant-level base data ---
+    demographics = doc_data.get('demographics') or {}
+    image_seq = doc_data.get('imageSequence')
+    completed_trials_dict = doc_data.get('completedTrials') or {}
+
+    base_data: Dict[str, Any] = {
+        'document_id': doc_id,
+        'radId': doc_data.get('radId'),
+        'createdAt': doc_data.get('createdAt'),
+        'completedAt': doc_data.get('completedAt'),
+        'currentTrialIndex': doc_data.get('currentTrialIndex'),
+        # Demographics expanded into individual columns
+        'demo_age': demographics.get('age'),
+        'demo_profession': demographics.get('profession'),
+        'demo_yearsOfExperience': demographics.get('yearsOfExperience'),
+        'demo_workplaceType': demographics.get('workplaceType'),
+        # Sequence & completion summary
+        'imageSequence': json.dumps(image_seq) if image_seq is not None else None,
+        'completedTrials_count': len(completed_trials_dict),
+    }
+
+    # --- Trials subcollection: one row per trial ---
+    subcollections = doc_data.get('_subcollections', {})
+    trials = subcollections.get('trials', {})
+
+    if trials:
+        for trial_id, trial_data in trials.items():
+            row = base_data.copy()
+            row.update({
+                'trial_id': trial_id,
+                'trial_imageFileName': trial_data.get('imageFileName'),
+                'trial_startTime': trial_data.get('startTime'),
+                'trial_endTime': trial_data.get('endTime'),
+                'trial_duration': trial_data.get('duration'),
+                'trial_confidence': trial_data.get('confidence'),
+                'trial_radiologistKLGrade': trial_data.get('radiologistKLGrade'),
+                'trial_groundTruthRaw': trial_data.get('groundTruthRaw'),
+                'trial_isReadable': trial_data.get('isReadable'),
+            })
+            rows.append(row)
+    else:
+        # Participant has not started any trials yet — emit one summary row
+        rows.append(base_data)
+
+    return rows
+
+
 def flatten_collection(collection_name: str, collection_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
     Flatten a Firestore collection into a list of rows.
@@ -158,6 +222,10 @@ def flatten_collection(collection_name: str, collection_data: Dict[str, Any]) ->
         for doc_id, doc_data in collection_data.items():
             participant_rows = flatten_participant_with_trials(doc_id, doc_data)
             rows.extend(participant_rows)
+    elif collection_name == 'radio_participants':
+        # Special handling: expand trials subcollection (one row per trial)
+        for doc_id, doc_data in collection_data.items():
+            rows.extend(flatten_radio_participant_with_trials(doc_id, doc_data))
     else:
         # Generic flattening for other collections
         for doc_id, doc_data in collection_data.items():

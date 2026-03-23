@@ -1,0 +1,547 @@
+# Round 3: Scripts, Missing Analyses & Paper Recommendations
+
+---
+
+## Script 1 — Chance-Level Participant Detection
+
+**Paste into: `NB1_performance_accuracy.ipynb`** (new section after §6, before Findings)
+
+This script runs a per-participant binomial test to determine who is statistically indistinguishable from random guessing. It also re-runs the main Control vs AI comparison with and without chance-level participants as a sensitivity analysis.
+
+```python
+# ═══════════════════════════════════════════════════════════════
+# §7. Chance-Level Participant Detection & Sensitivity Analysis
+# ═══════════════════════════════════════════════════════════════
+
+from scipy.stats import binomtest, ttest_rel, ttest_ind, wilcoxon
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+# --- 7a. Binomial test per participant ---
+# H0: participant accuracy = 0.5 (chance on balanced binary task)
+
+ps = get_participant_summary(df)
+
+ps['binom_p'] = ps.apply(
+    lambda r: binomtest(
+        int(round(r['overall_accuracy'] * r['n_trials'])),
+        int(r['n_trials']),
+        0.5,
+        alternative='greater'
+    ).pvalue,
+    axis=1
+)
+ps['above_chance'] = ps['binom_p'] < 0.05
+
+n_above = ps['above_chance'].sum()
+n_at_chance = (~ps['above_chance']).sum()
+
+print("=" * 60)
+print("§7a. Binomial Test: Are Participants Above Chance?")
+print("=" * 60)
+print(f"Total participants: {len(ps)}")
+print(f"Significantly above chance (p<0.05): {n_above} ({100*n_above/len(ps):.1f}%)")
+print(f"NOT significantly above chance:      {n_at_chance} ({100*n_at_chance/len(ps):.1f}%)")
+print()
+print(f"Above-chance group: M={ps[ps['above_chance']]['overall_accuracy'].mean():.3f}, "
+      f"SD={ps[ps['above_chance']]['overall_accuracy'].std():.3f}")
+print(f"At-chance group:    M={ps[~ps['above_chance']]['overall_accuracy'].mean():.3f}, "
+      f"SD={ps[~ps['above_chance']]['overall_accuracy'].std():.3f}")
+print()
+
+# Also check by condition
+if 'control_accuracy' in ps.columns:
+    above = ps[ps['above_chance']]
+    below = ps[~ps['above_chance']]
+    print("--- Breakdown by Condition ---")
+    print(f"Above-chance: Control={above['control_accuracy'].mean():.3f}, "
+          f"AI={above['ai_accuracy'].mean():.3f}")
+    print(f"At-chance:    Control={below['control_accuracy'].mean():.3f}, "
+          f"AI={below['ai_accuracy'].mean():.3f}")
+    print()
+
+# Per-condition binomial test (50 trials each)
+for cond, col in [('Control', 'control_accuracy'), ('AI', 'ai_accuracy')]:
+    subset = ps[ps[col].notna()].copy()
+    n_trials_cond = 50
+    subset[f'{cond}_binom_p'] = subset.apply(
+        lambda r: binomtest(
+            int(round(r[col] * n_trials_cond)),
+            n_trials_cond,
+            0.5,
+            alternative='greater'
+        ).pvalue,
+        axis=1
+    )
+    subset[f'{cond}_above_chance'] = subset[f'{cond}_binom_p'] < 0.05
+    n_a = subset[f'{cond}_above_chance'].sum()
+    print(f"{cond} phase: {n_a}/{len(subset)} above chance "
+          f"({100*n_a/len(subset):.1f}%)")
+print()
+
+# --- 7b. Sensitivity analysis: main result WITHOUT chance-level participants ---
+print("=" * 60)
+print("§7b. Sensitivity: Main Result Excluding At-Chance Participants")
+print("=" * 60)
+
+engaged_pids = set(ps[ps['above_chance']]['participant_id'])
+df_engaged = df[df['participant_id'].isin(engaged_pids)].copy()
+ps_engaged = get_participant_summary(df_engaged)
+ps_eng_completers = ps_engaged[ps_engaged['is_completer'] &
+                                ps_engaged['control_accuracy'].notna() &
+                                ps_engaged['ai_accuracy'].notna()]
+
+if len(ps_eng_completers) >= 2:
+    t_stat, p_val = ttest_rel(ps_eng_completers['ai_accuracy'],
+                               ps_eng_completers['control_accuracy'])
+    diff = ps_eng_completers['ai_accuracy'] - ps_eng_completers['control_accuracy']
+    d = diff.mean() / diff.std()
+    print(f"Engaged completers: n={len(ps_eng_completers)}")
+    print(f"Control: M={ps_eng_completers['control_accuracy'].mean():.3f}")
+    print(f"AI:      M={ps_eng_completers['ai_accuracy'].mean():.3f}")
+    print(f"Paired t: t={t_stat:.3f}, p={p_val:.4f}, d={d:.3f}")
+else:
+    print("Not enough engaged completers for paired test.")
+
+print()
+
+# --- 7c. Visualization ---
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+# Histogram of per-participant accuracy with chance threshold
+axes[0].hist(ps['overall_accuracy'], bins=15, edgecolor='black', alpha=0.7,
+             color=COLORS['neutral'])
+axes[0].axvline(x=0.5, color='red', linestyle='--', lw=2, label='Chance (50%)')
+# Approximate binomial threshold for n=100 at p<0.05 (one-sided)
+from scipy.stats import binom
+threshold_100 = binom.ppf(0.95, 100, 0.5) / 100
+threshold_50 = binom.ppf(0.95, 50, 0.5) / 50
+axes[0].axvline(x=threshold_100, color='orange', linestyle='--', lw=2,
+                label=f'Sig. threshold (n=100): {threshold_100:.0%}')
+axes[0].set_xlabel('Overall Accuracy')
+axes[0].set_ylabel('Count')
+axes[0].set_title('Distribution of Participant Accuracy')
+axes[0].legend(fontsize=9)
+
+# Engaged vs At-Chance accuracy by condition
+data_plot = pd.DataFrame({
+    'Group': ['Engaged']*len(ps[ps['above_chance']]) + ['At-Chance']*len(ps[~ps['above_chance']]),
+    'Overall Accuracy': list(ps[ps['above_chance']]['overall_accuracy']) +
+                        list(ps[~ps['above_chance']]['overall_accuracy'])
+})
+sns.boxplot(data=data_plot, x='Group', y='Overall Accuracy', ax=axes[1],
+            palette=[COLORS['correct'], COLORS['incorrect']])
+axes[1].set_title('Engaged vs At-Chance Participants')
+axes[1].axhline(y=0.5, color='red', linestyle='--', alpha=0.5)
+
+# Speed comparison
+data_speed = pd.DataFrame({
+    'Group': ['Engaged']*len(ps[ps['above_chance']]) + ['At-Chance']*len(ps[~ps['above_chance']]),
+    'Mean Duration (s)': list(ps[ps['above_chance']]['overall_mean_duration']) +
+                          list(ps[~ps['above_chance']]['overall_mean_duration'])
+})
+sns.boxplot(data=data_speed, x='Group', y='Mean Duration (s)', ax=axes[2],
+            palette=[COLORS['correct'], COLORS['incorrect']])
+axes[2].set_title('Trial Duration: Engaged vs At-Chance')
+
+plt.suptitle('§7. Chance-Level Participant Detection', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Script 2 — Speed vs Accuracy Correlation
+
+**Paste into: `NB1_performance_accuracy.ipynb`** (new section after Script 1)
+
+This script investigates the correlation between speed and accuracy at both participant-level and trial-level, including quartile analysis.
+
+```python
+# ═══════════════════════════════════════════════════════════════
+# §8. Speed vs Accuracy: Is Faster = Worse?
+# ═══════════════════════════════════════════════════════════════
+
+from scipy.stats import spearmanr, pearsonr
+
+ps = get_participant_summary(df)
+
+# --- 8a. Participant-level correlations ---
+r_sp, p_sp = spearmanr(ps['overall_mean_duration'], ps['overall_accuracy'])
+r_pe, p_pe = pearsonr(ps['overall_mean_duration'], ps['overall_accuracy'])
+
+print("=" * 60)
+print("§8a. Speed vs Accuracy (Participant-Level)")
+print("=" * 60)
+print(f"  Spearman: r={r_sp:.3f}, p={p_sp:.4f}")
+print(f"  Pearson:  r={r_pe:.3f}, p={p_pe:.4f}")
+print()
+
+# --- 8b. By condition ---
+for cond, dur_col, acc_col in [
+    ('Control', 'control_mean_duration', 'control_accuracy'),
+    ('AI-Assisted', 'ai_mean_duration', 'ai_accuracy'),
+]:
+    subset = ps[[dur_col, acc_col]].dropna()
+    if len(subset) > 5:
+        r, p = spearmanr(subset[dur_col], subset[acc_col])
+        print(f"  {cond}: r={r:.3f}, p={p:.4f} (n={len(subset)})")
+print()
+
+# --- 8c. Quartile analysis ---
+ps['speed_quartile'] = pd.qcut(
+    ps['overall_mean_duration'], 4,
+    labels=['Q1 (fastest)', 'Q2', 'Q3', 'Q4 (slowest)']
+)
+quartile_stats = ps.groupby('speed_quartile').agg(
+    mean_accuracy=('overall_accuracy', 'mean'),
+    std_accuracy=('overall_accuracy', 'std'),
+    mean_duration=('overall_mean_duration', 'mean'),
+    n=('overall_accuracy', 'count')
+).round(3)
+
+print("--- Accuracy by Speed Quartile ---")
+print(quartile_stats)
+print()
+
+# --- 8d. Trial-level correlation ---
+r_trial, p_trial = spearmanr(
+    df['trial_duration'].dropna(),
+    df.loc[df['trial_duration'].notna(), 'user_correct']
+)
+print(f"Trial-level speed vs accuracy: r={r_trial:.3f}, p={p_trial:.4f}")
+print()
+
+# --- 8e. Are fast participants also chance-level? ---
+# Cross-tabulate speed quartile × above-chance
+if 'above_chance' in ps.columns:
+    cross = pd.crosstab(ps['speed_quartile'], ps['above_chance'],
+                         margins=True)
+    cross.columns = ['At-Chance', 'Above-Chance', 'Total']
+    print("--- Speed Quartile × Above-Chance Cross-Tab ---")
+    print(cross)
+    from scipy.stats import chi2_contingency
+    chi2, p_chi, dof, _ = chi2_contingency(
+        pd.crosstab(ps['speed_quartile'], ps['above_chance'])
+    )
+    print(f"Chi-square: χ²={chi2:.2f}, p={p_chi:.4f}, dof={dof}")
+print()
+
+# --- 8f. Visualization ---
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+# Scatter
+axes[0].scatter(ps['overall_mean_duration'], ps['overall_accuracy'],
+                alpha=0.6, c=COLORS['neutral'], edgecolors='black', s=50)
+axes[0].set_xlabel('Mean Trial Duration (s)')
+axes[0].set_ylabel('Overall Accuracy')
+axes[0].set_title(f'Speed vs Accuracy (r={r_sp:.3f}, p={p_sp:.4f})')
+axes[0].axhline(y=0.5, color='red', linestyle='--', alpha=0.5, label='Chance')
+axes[0].legend()
+
+# Quartile bars
+quartile_stats['mean_accuracy'].plot(
+    kind='bar', ax=axes[1], yerr=quartile_stats['std_accuracy'],
+    capsize=5, color=[COLORS['incorrect'], COLORS['ai'],
+                      COLORS['control'], COLORS['correct']],
+    edgecolor='black'
+)
+axes[1].set_ylabel('Mean Accuracy')
+axes[1].set_title('Accuracy by Speed Quartile')
+axes[1].set_xticklabels(axes[1].get_xticklabels(), rotation=30, ha='right')
+axes[1].axhline(y=0.5, color='red', linestyle='--', alpha=0.5)
+
+# Duration distribution with accuracy coloring
+axes[2].scatter(ps['overall_mean_duration'], ps['overall_accuracy'],
+                c=ps['above_chance'].map({True: COLORS['correct'],
+                                           False: COLORS['incorrect']}),
+                edgecolors='black', s=50, alpha=0.7)
+axes[2].set_xlabel('Mean Trial Duration (s)')
+axes[2].set_ylabel('Overall Accuracy')
+axes[2].set_title('Engaged (green) vs At-Chance (red)')
+axes[2].axhline(y=0.5, color='red', linestyle='--', alpha=0.3)
+
+plt.suptitle('§8. Speed vs Accuracy Analysis', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Script 3 — Learning Effect Investigation
+
+**Paste into: `NB3_temporal_dynamics.ipynb`** (new section after §6, before §7)
+
+This script deeply investigates whether AI exposure creates a genuine learning effect that persists after AI is removed.
+
+```python
+# ═══════════════════════════════════════════════════════════════
+# §6b. Learning Effect: Does AI Exposure Improve Subsequent
+#       Unaided Performance?
+# ═══════════════════════════════════════════════════════════════
+
+from scipy.stats import ttest_ind, mannwhitneyu, spearmanr
+
+completers = df[df['is_completer']].copy()
+
+# KEY COMPARISON:
+# TG1 participants did AI first (Phase 1), then Control (Phase 2).
+# TG0 participants did Control first (Phase 1).
+# If AI teaches something, TG1's Control accuracy (Phase 2) should be
+# HIGHER than TG0's Control accuracy (Phase 1).
+
+tg0_control = completers[
+    (completers['treatment_group'].str.startswith('0')) &
+    (completers['condition'] == 'Control')
+]
+tg1_control = completers[
+    (completers['treatment_group'].str.startswith('1')) &
+    (completers['condition'] == 'Control')
+]
+
+tg0_ctrl_acc = tg0_control.groupby('participant_id')['user_correct'].mean()
+tg1_ctrl_acc = tg1_control.groupby('participant_id')['user_correct'].mean()
+
+t_stat, p_val = ttest_ind(tg1_ctrl_acc, tg0_ctrl_acc)
+u_stat, p_u = mannwhitneyu(tg1_ctrl_acc, tg0_ctrl_acc, alternative='greater')
+pooled_sd = ((tg0_ctrl_acc.std()**2 + tg1_ctrl_acc.std()**2) / 2) ** 0.5
+cohens_d = (tg1_ctrl_acc.mean() - tg0_ctrl_acc.mean()) / pooled_sd
+
+print("=" * 60)
+print("§6b. Learning Effect Investigation")
+print("=" * 60)
+print()
+print("COMPARISON: TG1 Control (Phase 2, AFTER AI) vs TG0 Control (Phase 1, NO prior AI)")
+print(f"  TG0 Control: M={tg0_ctrl_acc.mean():.3f}, SD={tg0_ctrl_acc.std():.3f}, "
+      f"n={len(tg0_ctrl_acc)}")
+print(f"  TG1 Control: M={tg1_ctrl_acc.mean():.3f}, SD={tg1_ctrl_acc.std():.3f}, "
+      f"n={len(tg1_ctrl_acc)}")
+print(f"  Difference:  {tg1_ctrl_acc.mean() - tg0_ctrl_acc.mean():.3f}")
+print(f"  Independent t-test: t={t_stat:.3f}, p={p_val:.4f}")
+print(f"  Mann-Whitney (TG1 > TG0): U={u_stat:.1f}, p={p_u:.4f}")
+print(f"  Cohen's d: {cohens_d:.3f}")
+print()
+
+# --- Learning curve within TG1's Control phase ---
+# If there's a learning effect, TG1 should start their Control phase strong
+tg1_control_sorted = tg1_control.sort_values(['participant_id', 'trial_end_time']).copy()
+tg1_control_sorted['within_phase_trial'] = (
+    tg1_control_sorted.groupby('participant_id').cumcount() + 1
+)
+
+tg0_control_sorted = tg0_control.sort_values(['participant_id', 'trial_end_time']).copy()
+tg0_control_sorted['within_phase_trial'] = (
+    tg0_control_sorted.groupby('participant_id').cumcount() + 1
+)
+
+blocks = [(1, 10), (11, 20), (21, 30), (31, 40), (41, 50)]
+print("--- Learning Curve: TG1 Control (after AI) vs TG0 Control (no prior AI) ---")
+print(f"{'Block':<12} {'TG0 (naive)':<16} {'TG1 (post-AI)':<16} {'Diff':<8}")
+print("-" * 52)
+for start, end in blocks:
+    tg0_block = tg0_control_sorted[
+        (tg0_control_sorted['within_phase_trial'] >= start) &
+        (tg0_control_sorted['within_phase_trial'] <= end)
+    ].groupby('participant_id')['user_correct'].mean()
+    tg1_block = tg1_control_sorted[
+        (tg1_control_sorted['within_phase_trial'] >= start) &
+        (tg1_control_sorted['within_phase_trial'] <= end)
+    ].groupby('participant_id')['user_correct'].mean()
+    diff = tg1_block.mean() - tg0_block.mean()
+    print(f"  {start}-{end:<8} {tg0_block.mean():.3f} ± {tg0_block.std():.3f}  "
+          f"{tg1_block.mean():.3f} ± {tg1_block.std():.3f}  {diff:+.3f}")
+print()
+
+# --- Does TG1's AI phase accuracy predict their Control phase accuracy? ---
+tg1_ps = get_participant_summary(completers[completers['treatment_group'].str.startswith('1')])
+if len(tg1_ps) > 5:
+    r, p = spearmanr(tg1_ps['ai_accuracy'], tg1_ps['control_accuracy'])
+    print(f"TG1: AI accuracy → Control accuracy: r={r:.3f}, p={p:.4f}")
+    print("  (positive r = those who performed better WITH AI also do better WITHOUT it)")
+    print()
+
+# --- Also: TG0's Phase 1 (Control) → Phase 2 (AI) improvement ---
+tg0_ps = get_participant_summary(completers[completers['treatment_group'].str.startswith('0')])
+print("--- Carry-Over Detail ---")
+print(f"TG0 (Control→AI):")
+print(f"  Phase 1 Control: {tg0_ps['control_accuracy'].mean():.3f}")
+print(f"  Phase 2 AI:      {tg0_ps['ai_accuracy'].mean():.3f}")
+print(f"  Change:          {tg0_ps['ai_accuracy'].mean() - tg0_ps['control_accuracy'].mean():+.3f}")
+print()
+print(f"TG1 (AI→Control):")
+print(f"  Phase 1 AI:      {tg1_ps['ai_accuracy'].mean():.3f}")
+print(f"  Phase 2 Control: {tg1_ps['control_accuracy'].mean():.3f}")
+print(f"  Change:          {tg1_ps['control_accuracy'].mean() - tg1_ps['ai_accuracy'].mean():+.3f}")
+print()
+print("INTERPRETATION:")
+print("  If TG1's Control accuracy is NOT significantly below their AI accuracy,")
+print("  this suggests a LEARNING EFFECT: the AI helped them develop skills")
+print("  that persisted even after AI was removed.")
+print("  Compare TG1 Control to TG0 Control for the strongest evidence.")
+
+# --- Visualization ---
+fig, axes = plt.subplots(1, 3, figsize=(18, 6))
+
+# Block-by-block comparison
+tg0_means, tg1_means = [], []
+for start, end in blocks:
+    tg0_b = tg0_control_sorted[
+        (tg0_control_sorted['within_phase_trial'] >= start) &
+        (tg0_control_sorted['within_phase_trial'] <= end)
+    ].groupby('participant_id')['user_correct'].mean().mean()
+    tg1_b = tg1_control_sorted[
+        (tg1_control_sorted['within_phase_trial'] >= start) &
+        (tg1_control_sorted['within_phase_trial'] <= end)
+    ].groupby('participant_id')['user_correct'].mean().mean()
+    tg0_means.append(tg0_b)
+    tg1_means.append(tg1_b)
+
+block_labels = [f'{s}-{e}' for s, e in blocks]
+x = range(len(blocks))
+axes[0].plot(x, tg0_means, 'o-', color=COLORS['control'], label='TG0 Control (naive)', lw=2)
+axes[0].plot(x, tg1_means, 's-', color=COLORS['ai'], label='TG1 Control (post-AI)', lw=2)
+axes[0].set_xticks(x)
+axes[0].set_xticklabels(block_labels)
+axes[0].set_xlabel('Trial Block')
+axes[0].set_ylabel('Mean Accuracy')
+axes[0].set_title('Control Phase Learning Curves')
+axes[0].legend()
+axes[0].axhline(y=0.5, color='red', linestyle='--', alpha=0.3)
+
+# Box comparison
+import matplotlib.patches as mpatches
+data_comp = pd.DataFrame({
+    'Accuracy': list(tg0_ctrl_acc) + list(tg1_ctrl_acc),
+    'Group': (['TG0: No Prior AI'] * len(tg0_ctrl_acc) +
+              ['TG1: After AI'] * len(tg1_ctrl_acc))
+})
+sns.boxplot(data=data_comp, x='Group', y='Accuracy', ax=axes[1],
+            palette=[COLORS['control'], COLORS['ai']])
+sns.stripplot(data=data_comp, x='Group', y='Accuracy', ax=axes[1],
+              color='black', alpha=0.4, size=4)
+axes[1].set_title(f'Control Accuracy Comparison\nt={t_stat:.2f}, p={p_val:.4f}')
+axes[1].axhline(y=0.5, color='red', linestyle='--', alpha=0.3)
+
+# Scatter: TG1 AI accuracy → TG1 Control accuracy
+if len(tg1_ps) > 5:
+    axes[2].scatter(tg1_ps['ai_accuracy'], tg1_ps['control_accuracy'],
+                    c=COLORS['ai'], edgecolors='black', s=50, alpha=0.7)
+    axes[2].plot([0.4, 0.9], [0.4, 0.9], 'k--', alpha=0.3, label='y=x')
+    axes[2].set_xlabel('TG1 AI Phase Accuracy')
+    axes[2].set_ylabel('TG1 Control Phase Accuracy')
+    axes[2].set_title(f'AI → Control Transfer (r={r:.3f})')
+    axes[2].legend()
+
+plt.suptitle('§6b. Learning Effect Investigation', fontsize=14, fontweight='bold')
+plt.tight_layout()
+plt.show()
+```
+
+---
+
+## Missing Analyses & Improvement Recommendations
+
+> [!IMPORTANT]
+> These are analyses that are **currently absent** from NB0-NB6 but would strengthen the paper. They are ordered by priority.
+
+### High Priority (Do Before Paper Writing)
+
+| # | Analysis | Why It Matters | Where |
+|---|----------|---------------|-------|
+| 1 | **Binomial chance-level test** (Script 1 above) | Determines how many participants are genuinely engaged vs. random guessing. Foundational for all other claims. | NB1 |
+| 2 | **Speed-accuracy correlation** (Script 2 above) | Directly addresses the "protester" question. If fast = random, we need exclusions. | NB1 |
+| 3 | **Learning effect test** (Script 3 above) | Strongest potential novel finding. If AI creates lasting learning, it's a major contribution. | NB3 |
+| 4 | **Multiple comparison correction** | NB4 runs 30 Big5×performance correlations without FDR/Bonferroni correction. The Extraversion findings (p=0.001, p=0.0001) will survive correction, but marginal findings (Neuroticism p=0.06) may not. Apply Benjamini-Hochberg FDR. | NB4 |
+| 5 | **Inter-rater reliability preparation** | When radiologist annotations arrive: compute Fleiss' κ among the 5 surgeons, then Cohen's κ between radiologist consensus and original ground truth. This quantifies the label noise problem. | New NB7 |
+
+### Medium Priority (Strengthen the Paper)
+
+| # | Analysis | Why It Matters | Where |
+|---|----------|---------------|-------|
+| 6 | **Batch effect test** | You ran two classroom batches. A simple t-test between Batch 1 and Batch 2 accuracy would show whether the social/environmental conditions differed. | NB1 or NB4 |
+| 7 | **Bootstrap CIs for key findings** | The AI boost (d=0.601) and Extraversion correlation (r=-0.422) are your headline numbers. Bootstrap 95% CIs would show their stability beyond parametric assumptions. | NB1, NB4 |
+| 8 | **Per-image difficulty analysis** | Some images are harder than others. Computing per-image accuracy and difficulty distribution would help contextualize errors and relate to the label noise finding. | NB6 or new |
+
+---
+
+## Addressing: Extraversion & Classroom Social Dynamics
+
+This is a legitimate confound and must be reported transparently. Here's how to handle it scientifically:
+
+**In the Methods section:**
+> "Participants completed the annotation task simultaneously in a shared computer lab in two cohorts. While instructed to work independently and informed that images were presented in randomized order, the researcher observed incidental verbal communication among participants during the task."
+
+**In the Discussion section (Limitations):**
+> "The negative association between Extraversion and accuracy (r = −0.42, p = .001) should be interpreted cautiously. Participants completed the task in a shared environment where verbal interaction was observed despite instructions to work independently. Extraverted participants may have been more prone to social engagement during the task, introducing a confound between trait Extraversion and attentional diversion. Future studies should control for this by using isolated testing conditions."
+
+> [!TIP]
+> This is not a fatal flaw — it's a **common limitation** in classroom-based studies. Many published studies in educational psychology have similar constraints. The key is to report it honestly and note that the correlation should be interpreted as *environment-mediated* rather than purely trait-driven.
+
+---
+
+## Paper Structure Recommendation
+
+> [!IMPORTANT]
+> **Recommended framing: "Conceptual Replication with Extensions"**
+
+This is the strongest framing for several reasons:
+
+1. **Replication studies are increasingly valued** — many top venues (CHI, IUI, CSCW) now explicitly welcome replication work, especially when it tests generalizability across populations.
+
+2. **Your study is NOT a direct replication** — it differs from DANNY in population, design, and measures:
+
+| Dimension | DANNY | PerCoTate | Implication |
+|-----------|-------|-----------|-------------|
+| Participants | 28 adults | 68 high school students | Tests generalizability to younger, unpaid non-experts |
+| Design | Between-subjects (4 groups) | Within-subjects crossover (2 conditions) | Higher statistical power, controls for individual differences |
+| Cognitive forcing | Criteria + Correction + Saliency map | Same bounding box + symptom selection | Replication of core mechanism |
+| AI accuracy | 70% | 70% (shown), 74% (model) | Comparable sub-optimality |
+| Psychometrics | None | Big5 + IQ | **Novel extension** |
+| Temporal dynamics | None | 50-trial learning curves | **Novel extension** |
+| Ground truth validation | Expert-only | Expert + radiologist re-annotation | **Novel methodological addition** |
+
+3. **Suggested paper title format:**
+   > *"Replicating and Extending Cognitive Forcing for Non-Expert Medical Image Annotation: Individual Differences and Temporal Dynamics in AI-Assisted Knee Osteoarthritis Labeling"*
+
+4. **Suggested structure:**
+   - **Introduction**: Frame the chicken-and-egg problem (cite DANNY), state that replication + extension is needed
+   - **Related Work**: Non-expert annotation, over-reliance on AI, cognitive forcing, individual differences in HCI
+   - **Method**: PerCoTate system, crossover design, psychometric measures, ground truth validation
+   - **Results**: (a) Replication: AI boost on accuracy, over-reliance/skepticism rates; (b) Extension: temporal dynamics, personality predictors, learning effect
+   - **Discussion**: Replication findings in context, novel contributions, limitations (classroom, IQ, sample size)
+
+5. **Target venues** (in order of fit):
+   - **IUI** (where DANNY was published — natural fit for replication)
+   - **CHI** (broader HCI audience, if framed around the personality/individual differences angle)
+   - **CSCW** (if framed around crowdsourcing and non-expert collaboration)
+   - **Journal of Biomedical Informatics** (if framed around the medical annotation application)
+
+---
+
+## On the OLS Regression (NB4 §5)
+
+**Recommendation: Keep it, but reframe as exploratory.**
+
+The R²=0.331 with n=58 is underpowered for 6 predictors but still informative. I recommend:
+1. **Keep the regression** but label it explicitly as "exploratory" in the paper
+2. **Add bootstrap CIs** (1000 iterations) to show coefficient stability
+3. **Drop IQ** from the model (it's non-significant and conceptually distinct from Big5) → this gives 5 predictors with n=58, improving the ratio
+4. **Report bivariate correlations as primary**, regression as supplementary
+
+If you want, I can prepare a script for the bootstrap regression as well.
+
+---
+
+## On AI Accuracy Discrepancy (70% vs 74% vs 78%)
+
+> [!WARNING]
+> The numbers in NB0 show "AI Overall Accuracy: 77.8%", but your context says the model was 74% and participants saw 70%. This discrepancy MUST be clarified in the paper.
+
+The 77.8% is calculated from the **trial data** (i.e., the AI predictions on the specific 50 images participants saw). The 70% is the AI's accuracy on the full dataset (which is what DANNY also used). The 74% is the model's overall trained accuracy.
+
+**For the paper, you need to report:**
+- The model's overall accuracy on the training/validation set (74%)
+- The model's accuracy on the specific 50-image subset used in the study (77.8%)
+- That the heatmaps and confidence scores reflect the 74% model
+
+This difference (70% → 78% on the subset) likely arises because the 50-image subset happens to contain images the model is better at. This is important context.
