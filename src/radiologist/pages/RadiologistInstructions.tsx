@@ -48,22 +48,22 @@ export const RadiologistInstructions: React.FC<RadiologistInstructionsProps> = (
                     </p>
 
                     <div className="bg-gray-50 border border-gray-200 rounded-xl p-5 space-y-4 text-base">
-                        <div className="flex items-start gap-4">
+                        {/* <div className="flex items-start gap-4">
                             <span className="bg-teal-100 text-teal-700 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">1</span>
                             <div>
                                 <strong className="text-gray-900 block mb-1">Olvasható-e a kép?</strong>
                                 <p className="text-sm text-gray-600">Értékelhető-e a röntgenfelvétel minősége alapján.</p>
                             </div>
-                        </div>
+                        </div> */}
                         <div className="flex items-start gap-4">
-                            <span className="bg-teal-100 text-teal-700 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">2</span>
+                            <span className="bg-teal-100 text-teal-700 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">1</span>
                             <div>
                                 <strong className="text-gray-900 block mb-1">Kellgren-Lawrence fokozat (0–4)</strong>
                                 <p className="text-sm text-gray-600">Értékelje a porckopás mértékét a KL skála szerint.</p>
                             </div>
                         </div>
                         <div className="flex items-start gap-4">
-                            <span className="bg-teal-100 text-teal-700 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">3</span>
+                            <span className="bg-teal-100 text-teal-700 font-bold rounded-full w-8 h-8 flex items-center justify-center text-sm flex-shrink-0 mt-0.5">2</span>
                             <div>
                                 <strong className="text-gray-900 block mb-1">Magabiztosság (1–7)</strong>
                                 <p className="text-sm text-gray-600">Mennyire biztos a döntésében (1 = bizonytalan, 7 = teljesen biztos).</p>

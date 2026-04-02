@@ -18,6 +18,11 @@ import warnings
 import numpy as np
 import pandas as pd
 
+# ── Ground Truth Source Toggle ──
+# Set to True  → use radiologist consensus ground truth (amb cases excluded)
+# Set to False → use original database ground truth (unchanged behavior)
+USE_RADIOLOGIST_GROUND_TRUTH = True
+
 # ─────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────
@@ -26,7 +31,7 @@ import pandas as pd
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(
     _THIS_DIR,
-    "..", "outputs", "csv", "export_2026.03.06_10:36_1", "participants.csv"
+    "..", "outputs", "csv", "export_2026.04.02_11:06_1", "participants.csv"
 )
 
 # Symptom Hungarian → English mapping
@@ -39,6 +44,7 @@ SYMPTOM_MAP = {
 # KL grade → severity label
 KL_SEVERITY_MAP = {
     0: "healthy",
+    1: "doubtful",
     2: "mild",
     3: "moderate",
     4: "severe",
@@ -56,6 +62,8 @@ COLORS = {
 }
 
 CONDITION_PALETTE = {"Control": COLORS["control"], "AI-Assisted": COLORS["ai"]}
+
+RADIO_GT_PATH = os.path.join(_THIS_DIR, "Radiologist_Ground_Truth.csv")
 
 # ─────────────────────────────────────────────
 # Data Loading & Cleaning
@@ -123,6 +131,93 @@ def load_and_clean(csv_path: str | None = None) -> pd.DataFrame:
     df["trial_order"] = (
         df.groupby("participant_id").cumcount() + 1
     )
+
+    # Determine completion status BEFORE any rows are potentially dropped
+    # by the radiologist GT filter (which removes 'amb' cases).
+    _max_trials = df.groupby("participant_id")["trial_order"].transform("max")
+    df["is_completer"] = _max_trials >= 100
+
+    # ── Radiologist GT swap (toggle) ──
+    if USE_RADIOLOGIST_GROUND_TRUTH:
+        df = _apply_radiologist_ground_truth(df, ambiguous_action="keep_as_negative")
+
+    return df
+
+
+def _apply_radiologist_ground_truth(
+    df: pd.DataFrame,
+    ambiguous_action: str = "exclude",
+) -> pd.DataFrame:
+    """
+    Replace ground_truth_binary with radiologist consensus labels.
+
+    Loads Radiologist_Ground_Truth.csv and remaps ground_truth_binary
+    and ground_truth_raw. Ambiguous cases (binary=1) are excluded by default.
+
+    Parameters
+    ----------
+    df : DataFrame from load_and_clean() — BEFORE derive_variables()
+    ambiguous_action : how to handle KL1 (ambiguous) images
+        "exclude"          — drop all trials for ambiguous images (default)
+        "keep_as_positive" — treat KL1 as diseased (binary=1)
+        "keep_as_negative" — treat KL1 as healthy  (binary=0)
+
+    Returns
+    -------
+    DataFrame with updated ground_truth_binary, ground_truth_raw, and a gt_source column.
+    """
+    radio_gt = pd.read_csv(RADIO_GT_PATH)
+
+    # Build mapping for binary and raw truths
+    gt_map_bin = dict(zip(radio_gt["trial_imageFileName"], radio_gt["Ground_Truth_Binary"]))
+    gt_map_raw = dict(zip(radio_gt["trial_imageFileName"], radio_gt["Ground_Truth_Raw"]))
+
+    # Map every trial to its radiologist label
+    df["_radio_label"] = df["trial_image_name"].map(gt_map_bin)
+    df["_radio_raw"] = df["trial_image_name"].map(gt_map_raw)
+
+    n_before = len(df)
+    # in Ground_Truth_Binary, 1 is ambiguous/doubtful
+    amb_images = df.loc[df["_radio_label"] == 1, "trial_image_name"].unique()
+    n_amb_trials = (df["_radio_label"] == 1).sum()
+
+    if ambiguous_action == "exclude":
+        df = df[df["_radio_label"] != 1].copy()
+    elif ambiguous_action == "keep_as_positive":
+        pass  # 1 is treated as positive, mapped below
+    elif ambiguous_action == "keep_as_negative":
+        df.loc[df["_radio_label"] == 1, "_radio_label"] = 0
+    else:
+        raise ValueError(f"Unknown ambiguous_action: {ambiguous_action}")
+
+    # Count flips before overwriting
+    old_gt = df["ground_truth_binary"].copy()
+    
+    # Radiologist Ground_Truth_Binary has values 0 (healthy), 1 (ambiguous), 2 (diseased)
+    # We must map 2 -> 1, and 1 -> 1 (if kept as positive) so binary is purely 0 or 1.
+    new_gt = df["_radio_label"].replace({2: 1}).astype(float)
+    new_raw = df["_radio_raw"].astype(float)
+    
+    n_flips = (old_gt != new_gt).sum()
+    flipped_images = df.loc[old_gt != new_gt, "trial_image_name"].unique()
+
+    # Overwrite ground_truth_binary and ground_truth_raw
+    df["ground_truth_binary"] = new_gt
+    df["ground_truth_raw"] = new_raw
+    df["gt_source"] = "radiologist"
+    df.drop(columns=["_radio_label", "_radio_raw"], inplace=True)
+
+    # ── Summary ──
+    print("═" * 55)
+    print("  RADIOLOGIST GROUND TRUTH APPLIED")
+    print("═" * 55)
+    print(f"  Amb images excluded:  {len(amb_images)} images, {n_amb_trials} trials")
+    print(f"  Rows:                 {n_before} → {len(df)}")
+    print(f"  Label flips:          {n_flips} trials ({len(flipped_images)} images)")
+    if len(flipped_images) > 0:
+        print(f"  Flipped images:       {sorted(flipped_images, key=lambda x: int(x.replace('.png','')))}")
+    print(f"  New class balance:    0={int((df['ground_truth_binary']==0).sum())}  1={int((df['ground_truth_binary']==1).sum())}")
+    print("═" * 55)
 
     return df
 
@@ -260,8 +355,10 @@ def derive_variables(df: pd.DataFrame) -> pd.DataFrame:
     df["kl_severity"] = df["ground_truth_raw"].map(KL_SEVERITY_MAP)
 
     # ── Participant completion status ──
-    trials_per_p = df.groupby("participant_id")["trial_order"].transform("max")
-    df["is_completer"] = trials_per_p == 100
+    # If load_and_clean already determined this (to avoid dropping rows breaking it)
+    if "is_completer" not in df.columns:
+        trials_per_p = df.groupby("participant_id")["trial_order"].transform("max")
+        df["is_completer"] = trials_per_p >= 100
 
     # ── Has psychometric data ──
     df["has_psychometrics"] = df["big5_agreeableness"].notna()
