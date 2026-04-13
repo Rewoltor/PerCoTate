@@ -31,7 +31,7 @@ USE_RADIOLOGIST_GROUND_TRUTH = True
 _THIS_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_PATH = os.path.join(
     _THIS_DIR,
-    "..", "outputs", "csv", "export_2026.04.02_11:06_1", "participants.csv"
+    "..", "outputs", "csv", "export_2026.04.13_14:29_1", "participants.csv"
 )
 
 # Symptom Hungarian → English mapping
@@ -151,13 +151,14 @@ def _apply_radiologist_ground_truth(
     """
     Replace ground_truth_binary with radiologist consensus labels.
 
-    Loads Radiologist_Ground_Truth.csv and remaps ground_truth_binary
-    and ground_truth_raw. Ambiguous cases (binary=1) are excluded by default.
+    Loads the CSV at RADIO_GT_PATH and remaps ground_truth_binary and 
+    ground_truth_raw. Dynamically detects columns like 'Corrected Truth' 
+    or 'physician_n' to ensure a smooth integration.
 
     Parameters
     ----------
     df : DataFrame from load_and_clean() — BEFORE derive_variables()
-    ambiguous_action : how to handle KL1 (ambiguous) images
+    ambiguous_action : how to handle KL1 (ambiguous/doubtful) images
         "exclude"          — drop all trials for ambiguous images (default)
         "keep_as_positive" — treat KL1 as diseased (binary=1)
         "keep_as_negative" — treat KL1 as healthy  (binary=0)
@@ -166,57 +167,90 @@ def _apply_radiologist_ground_truth(
     -------
     DataFrame with updated ground_truth_binary, ground_truth_raw, and a gt_source column.
     """
+    if not os.path.exists(RADIO_GT_PATH):
+        warnings.warn(f"Radiologist ground truth file not found: {RADIO_GT_PATH}. Skipping swap.")
+        return df
+
     radio_gt = pd.read_csv(RADIO_GT_PATH)
 
-    # Build mapping for binary and raw truths
-    gt_map_bin = dict(zip(radio_gt["trial_imageFileName"], radio_gt["Ground_Truth_Binary"]))
-    gt_map_raw = dict(zip(radio_gt["trial_imageFileName"], radio_gt["Ground_Truth_Raw"]))
+    # ── 1. Identify Columns ──
+    img_col = next((c for c in ["trial_imageFileName", "image_name", "image"] if c in radio_gt.columns), "trial_imageFileName")
+    if img_col not in radio_gt.columns:
+         raise KeyError(f"Could not find image filename column in {RADIO_GT_PATH}.")
 
-    # Map every trial to its radiologist label
+    # Ground Truth columns
+    raw_col = next((c for c in ["Ground_Truth_Raw", "Corrected Truth"] if c in radio_gt.columns), None)
+    bin_col = next((c for c in ["Ground_Truth_Binary"] if c in radio_gt.columns), None)
+    
+    # Handle multi-physician case
+    rater_cols = [c for c in radio_gt.columns if "physician_" in c or "rater_" in c]
+    if raw_col is None and rater_cols:
+        # Calculate consensus as median (robust for KL scale)
+        radio_gt["Ground_Truth_Raw"] = radio_gt[rater_cols].median(axis=1).round().astype(int)
+        raw_col = "Ground_Truth_Raw"
+        print(f"  (Calculated consensus from {len(rater_cols)} raters)")
+
+    if raw_col is None:
+        raise KeyError(f"No ground truth column ('Corrected Truth', 'Ground_Truth_Raw') found in {RADIO_GT_PATH}")
+
+    # ── 2. Build Mappings ──
+    # If bin_col exists (values 0,1,2), use it. Otherwise derive from KL raw (0-4).
+    if bin_col:
+        gt_map_bin = dict(zip(radio_gt[img_col], radio_gt[bin_col]))
+    else:
+        # 0 -> 0 (Healthy), 1 -> 1 (Ambiguous), 2-4 -> 2 (Diseased)
+        def map_kl_to_tri(v):
+            try:
+                v = float(v)
+                if v == 0: return 0
+                if v == 1: return 1
+                return 2
+            except: return 1
+        gt_map_bin = {row[img_col]: map_kl_to_tri(row[raw_col]) for _, row in radio_gt.iterrows()}
+    
+    gt_map_raw = dict(zip(radio_gt[img_col], radio_gt[raw_col]))
+
+    # ── 3. Apply Mapping ──
     df["_radio_label"] = df["trial_image_name"].map(gt_map_bin)
     df["_radio_raw"] = df["trial_image_name"].map(gt_map_raw)
 
     n_before = len(df)
-    # in Ground_Truth_Binary, 1 is ambiguous/doubtful
     amb_images = df.loc[df["_radio_label"] == 1, "trial_image_name"].unique()
     n_amb_trials = (df["_radio_label"] == 1).sum()
 
     if ambiguous_action == "exclude":
         df = df[df["_radio_label"] != 1].copy()
     elif ambiguous_action == "keep_as_positive":
-        pass  # 1 is treated as positive, mapped below
+        df.loc[df["_radio_label"] == 1, "_radio_label"] = 2
     elif ambiguous_action == "keep_as_negative":
         df.loc[df["_radio_label"] == 1, "_radio_label"] = 0
-    else:
-        raise ValueError(f"Unknown ambiguous_action: {ambiguous_action}")
 
-    # Count flips before overwriting
+    # Count flips before final binary swap
     old_gt = df["ground_truth_binary"].copy()
-    
-    # Radiologist Ground_Truth_Binary has values 0 (healthy), 1 (ambiguous), 2 (diseased)
-    # We must map 2 -> 1, and 1 -> 1 (if kept as positive) so binary is purely 0 or 1.
+    # Map 2 (Diseased) -> 1
     new_gt = df["_radio_label"].replace({2: 1}).astype(float)
     new_raw = df["_radio_raw"].astype(float)
     
     n_flips = (old_gt != new_gt).sum()
     flipped_images = df.loc[old_gt != new_gt, "trial_image_name"].unique()
 
-    # Overwrite ground_truth_binary and ground_truth_raw
     df["ground_truth_binary"] = new_gt
     df["ground_truth_raw"] = new_raw
-    df["gt_source"] = "radiologist"
+    df["gt_source"] = f"radiologist ({os.path.basename(RADIO_GT_PATH)})"
     df.drop(columns=["_radio_label", "_radio_raw"], inplace=True)
 
     # ── Summary ──
     print("═" * 55)
     print("  RADIOLOGIST GROUND TRUTH APPLIED")
+    print(f"  File: {os.path.basename(RADIO_GT_PATH)}")
     print("═" * 55)
-    print(f"  Amb images excluded:  {len(amb_images)} images, {n_amb_trials} trials")
-    print(f"  Rows:                 {n_before} → {len(df)}")
-    print(f"  Label flips:          {n_flips} trials ({len(flipped_images)} images)")
+    print(f"  Amb images (KL1):  {len(amb_images)} images, {n_amb_trials} trials")
+    print(f"  Action taken:      {ambiguous_action.upper()}")
+    print(f"  Rows:              {n_before} → {len(df)}")
+    print(f"  Label flips:       {n_flips} trials ({len(flipped_images)} images)")
     if len(flipped_images) > 0:
-        print(f"  Flipped images:       {sorted(flipped_images, key=lambda x: int(x.replace('.png','')))}")
-    print(f"  New class balance:    0={int((df['ground_truth_binary']==0).sum())}  1={int((df['ground_truth_binary']==1).sum())}")
+        print(f"  Flipped images:    {sorted(flipped_images, key=lambda x: int(x.replace('.png','')) if x.replace('.png','').isdigit() else x)}")
+    print(f"  New class balance: 0={int((df['ground_truth_binary']==0).sum())}  1={int((df['ground_truth_binary']==1).sum())}")
     print("═" * 55)
 
     return df
