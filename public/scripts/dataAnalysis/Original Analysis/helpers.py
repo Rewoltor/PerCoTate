@@ -18,10 +18,15 @@ import warnings
 import numpy as np
 import pandas as pd
 
-# ── Ground Truth Source Toggle ──
 # Set to True  → use radiologist consensus ground truth (amb cases excluded)
 # Set to False → use original database ground truth (unchanged behavior)
 USE_RADIOLOGIST_GROUND_TRUTH = True
+
+# How to handle KL1 (ambiguous/doubtful) images when radiologist GT is used:
+# "exclude"          — drop all trials for ambiguous images
+# "keep_as_positive" — treat KL1 as diseased (binary=1)
+# "keep_as_negative" — treat KL1 as healthy  (binary=0)
+RADIOLOGIST_AMBIGUOUS_ACTION = "exclude"
 
 # ─────────────────────────────────────────────
 # Constants
@@ -139,7 +144,7 @@ def load_and_clean(csv_path: str | None = None) -> pd.DataFrame:
 
     # ── Radiologist GT swap (toggle) ──
     if USE_RADIOLOGIST_GROUND_TRUTH:
-        df = _apply_radiologist_ground_truth(df, ambiguous_action="keep_as_negative")
+        df = _apply_radiologist_ground_truth(df, ambiguous_action=RADIOLOGIST_AMBIGUOUS_ACTION)
 
     return df
 

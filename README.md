@@ -228,6 +228,22 @@ Then open: **http://localhost:5173/scripts/dataVisualizer/index.html**
 
 📖 **Full documentation**: See [`public/scripts/dataVisualizer/README.md`](public/scripts/dataVisualizer/README.md)
 
+---
+
+## 🔬 Data Analysis Projects
+
+The project includes specialized analysis pipelines for the study results, located in `public/scripts/dataAnalysis/`.
+
+### [New analysis](./public/scripts/dataAnalysis/New%20analysis/) (Publication Standard)
+The primary analytical pipeline for the paper. It utilizes a **Platinum Standard** (Radiologist Consensus) to audit and correct repository label noise.
+- **Workflow**: Sequence of Jupyter notebooks (`NB0`–`NB5`) supported by a shared `helpers.py`.
+- **Key Metrics**: Mixed-effects regression, human-AI reliance taxonomy, and psychometric predictors.
+
+### [Original Analysis](./public/scripts/dataAnalysis/Original%20Analysis/) (Reference)
+Preliminary analysis conducted using the original (mislabeled) ground truth. It is maintained strictly for historical reference and to demonstrate the "Accuracy Paradox" caused by label noise.
+
+---
+
 ## 📦 Available Scripts
 
 | Command | Description |
