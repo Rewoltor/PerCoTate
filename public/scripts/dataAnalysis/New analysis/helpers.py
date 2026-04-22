@@ -3,6 +3,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import re
+
+# --- CONFIGURATION SWITCHES ---
+FILTER_COMPLETERS = True  # Set to True to only include participants who finished both sessions
+# ------------------------------
 
 # Plotting defaults
 plt.style.use('seaborn-v0_8-whitegrid')
@@ -29,14 +34,16 @@ def load_data(kl1_strategy='exclude'):
     parts_df = pd.read_csv(participants_path)
     rad_df = pd.read_csv(radiologist_path)
     
-    # Check for inconsistencies before overriding
+    # Filter non-completers if toggle is ON
+    if FILTER_COMPLETERS:
+        parts_df = parts_df[parts_df['current_phase'] == 'phase2_completed'].copy()
+    
     # Ensure trial_imageFileName matching
     df = parts_df.merge(rad_df, left_on='trial_image_name', right_on='trial_imageFileName', how='inner')
     
     df['gt_original_kl'] = df['gt_original']
     df['gt_original_binary'] = (df['gt_original_kl'] >= 2).astype(int)
     
-    # If gt_plat_kl exists twice:
     if 'gt_plat_kl_y' in df.columns:
         df['gt_plat_kl'] = df['gt_plat_kl_y']
     
@@ -50,13 +57,10 @@ def load_data(kl1_strategy='exclude'):
     else:
         raise ValueError(f"Unknown KL1 strategy: {kl1_strategy}")
 
-    # Fill missing final_decision/confidence BEFORE computing metrics
-    # Ensure trials with no-AI show the initial decision as the final one
     df['final_decision'] = df['final_decision'].fillna(df['initial_decision'])
     if 'final_confidence' in df.columns and 'initial_confidence' in df.columns:
         df['final_confidence'] = df['final_confidence'].fillna(df['initial_confidence'])
     
-    # Final fallback for Control condition (no_ai) using the old 'confidence' column
     if 'confidence' in df.columns:
         df['final_confidence'] = df['final_confidence'].fillna(df['confidence'])
         df['initial_confidence'] = df['initial_confidence'].fillna(df['confidence'])
@@ -79,11 +83,19 @@ def load_data(kl1_strategy='exclude'):
     df['unwarranted_skepticism'] = (df['ai_shown'] == True) & (df['ai_correct_plat'] == True) & (df['final_decision'] != df['ai_prediction'])
     
     df['decision_changed'] = df['initial_decision'] != df['final_decision']
-    df['session'] = df['current_phase'].apply(lambda x: 1 if 'phase1' in str(x) else 2)
+    df['session'] = df['trial_id'].apply(lambda x: 2 if str(x).startswith('p2_') else 1)
     df['condition'] = df['ai_shown'].apply(lambda x: 'ai' if x else 'no_ai')
     
+    # Ordering Logic Verification
+    def extract_trial_num(tid):
+        match = re.search(r'trial_(\d+)', str(tid))
+        return int(match.group(1)) if match else 0
+    
+    df['trial_id_num'] = df['trial_id'].apply(extract_trial_num)
     df['trial_start_time'] = pd.to_numeric(df['trial_start_time'], errors='coerce')
-    df['trial_order'] = df.groupby(['participant_id', 'session'])['trial_start_time'].rank(method='first', ascending=True).astype(int)
+    
+    # Use trial_id_num for the primary order, but keep trial_start_time ranking for backup verification
+    df['trial_order'] = df['trial_id_num']
     
     assert not df[['gt_plat_kl', 'gt_original', 'ai_prediction', 'final_decision']].isnull().any().any(), "Null values detected in key columns"
     
@@ -126,9 +138,9 @@ def participant_summary(df):
             'n_trials_noai': len(pdf_noai),
         }
         
-        # Add big 5 logic
-        b5_cols = [c for c in pdf.columns if c.startswith('big5_') or c.startswith('facet_') or c == 'iq_score' or c in ['age', 'gender', 'treatment_group']]
-        for c in b5_cols:
+        # Add demographics and psychometrics
+        info_cols = [c for c in pdf.columns if c.startswith('big5_') or c.startswith('facet_') or c == 'iq_score' or c in ['age', 'gender', 'treatment_group', 'school', 'residence', 'experience_level', 'healthcare_qualification']]
+        for c in info_cols:
             row[c] = pdf[c].iloc[0]
             
         res.append(row)
