@@ -1,1 +1,10 @@
 venv/
+data/
+report_assets/
+FINAL_ANALYSIS_REPORT.md
+plots/
+figures/
+notebooks/
+old_analysis/
+old-NB/
+scratch/

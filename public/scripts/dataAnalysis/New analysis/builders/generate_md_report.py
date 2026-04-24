@@ -16,6 +16,7 @@ import helpers
 # 1. Config
 NOTEBOOKS = [
     "NB0_data_quality.ipynb",
+    "NB0.1_demographics.ipynb",
     "NB1_ground_truth_comparison.ipynb",
     "NB2_annotation_experiment.ipynb",
     "NB3_psychometrics.ipynb",

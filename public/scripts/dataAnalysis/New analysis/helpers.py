@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import os
 import re
+# --- PALETTES ---
+CONDITION_PALETTE = {"ai": "#0072B2", "no_ai": "#E69F00"}
+COLORS = {"correct": "#009E73", "incorrect": "#D55E00", "neutral": "#56B4E9"}
+
 
 # --- CONFIGURATION SWITCHES ---
 FILTER_COMPLETERS = True  # Set to True to only include participants who finished both sessions
@@ -26,7 +30,10 @@ def _get_label_direction(row):
     if orig >= 2 and plat == 1: return 'ambig_from_pos'
     return 'other'
 
-def load_data(kl1_strategy='exclude'):
+def load_data(kl1_strategy='exclude', filter_completers=None, filter_psychometrics=False):
+    if filter_completers is None:
+        filter_completers = FILTER_COMPLETERS
+        
     data_dir = os.path.join(os.path.dirname(__file__), 'data')
     participants_path = os.path.join(data_dir, 'participants.csv')
     radiologist_path = os.path.join(data_dir, 'Radiologist_Ground_Truth.csv')
@@ -34,9 +41,21 @@ def load_data(kl1_strategy='exclude'):
     parts_df = pd.read_csv(participants_path)
     rad_df = pd.read_csv(radiologist_path)
     
-    # Filter non-completers if toggle is ON
-    if FILTER_COMPLETERS:
+    initial_n = len(parts_df['participant_id'].unique())
+    
+    # Filter non-completers if requested
+    if filter_completers:
         parts_df = parts_df[parts_df['current_phase'] == 'phase2_completed'].copy()
+    
+    # Filter only those who finished psychometrics if requested
+    if filter_psychometrics:
+        parts_df = parts_df[parts_df['big5_timestamp'].notnull()].copy()
+    
+    final_n = len(parts_df['participant_id'].unique())
+    print(f"Data Loading: {final_n} participants selected (from {initial_n} initial).")
+    if filter_completers and final_n != 51:
+        print(f"WARNING: Expected 51 completers, but found {final_n}. Check current_phase column.")
+
     
     # Ensure trial_imageFileName matching
     df = parts_df.merge(rad_df, left_on='trial_image_name', right_on='trial_imageFileName', how='inner')
