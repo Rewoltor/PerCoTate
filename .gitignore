@@ -113,3 +113,7 @@ public/scripts/outputs/
 # OS-specific files
 Thumbs.db
 Desktop.ini
+
+# Custom Additions
+!.env.example
+
